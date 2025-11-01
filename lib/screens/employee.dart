@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'add_employee_screen.dart';
 
-// Mô phỏng dữ liệu nhân viên
 class Employee {
   final String name;
   final String role;
-  final String email;
   final String phone;
   final String status;
   final Color statusColor;
@@ -12,44 +11,44 @@ class Employee {
   const Employee({
     required this.name,
     required this.role,
-    required this.email,
     required this.phone,
     required this.status,
     required this.statusColor,
   });
 }
 
-class EmployeeManagementScreen extends StatelessWidget {
+class EmployeeManagementScreen extends StatefulWidget {
   const EmployeeManagementScreen({super.key});
 
-  final List<Employee> _sampleEmployees = const [
-    Employee(
+  @override
+  State<EmployeeManagementScreen> createState() => _EmployeeManagementScreenState();
+}
+
+class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
+  final List<Employee> _employees = [
+    const Employee(
       name: 'Nguyễn Văn A',
       role: 'Quản lý',
-      email: 'a.nguyen@email.com',
       phone: '0901xxx123',
       status: 'Đang làm',
       statusColor: Colors.green,
     ),
-    Employee(
+    const Employee(
       name: 'Trần Thị B',
       role: 'Nhân viên bán hàng',
-      email: 'b.tran@email.com',
       phone: '0902xxx456',
       status: 'Đang làm',
       statusColor: Colors.green,
     ),
-    Employee(
+    const Employee(
       name: 'Lê Văn C',
       role: 'Kho',
-      email: 'c.le@email.com',
       phone: '0903xxx789',
       status: 'Nghỉ việc',
       statusColor: Colors.red,
     ),
   ];
 
-  // Widget hiển thị mỗi dòng nhân viên
   Widget _buildEmployeeTile(Employee employee) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -85,14 +84,38 @@ class EmployeeManagementScreen extends StatelessWidget {
           child: Text(
             employee.status,
             style: TextStyle(
-              color: employee.statusColor.withOpacity(1.0),
+              color: employee.statusColor,
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
           ),
         ),
         onTap: () {
-          // Logic xem chi tiết nhân viên
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text('Xoá ${employee.name}?'),
+              content: const Text('Bạn có chắc muốn xoá nhân viên này không?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Huỷ'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _employees.remove(employee);
+                    });
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Đã xoá ${employee.name}')),
+                    );
+                  },
+                  child: const Text('Xoá', style: TextStyle(color: Colors.red)),
+                ),
+              ],
+            ),
+          );
         },
       ),
     );
@@ -102,10 +125,7 @@ class EmployeeManagementScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Quản lý nhân viên',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: const Text('Quản lý nhân viên', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: false,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
@@ -117,8 +137,17 @@ class EmployeeManagementScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.person_add_alt_1, size: 30),
-            onPressed: () {
-              // Logic Thêm nhân viên mới
+            onPressed: () async {
+              final newEmployee = await Navigator.push<Employee>(
+                context,
+                MaterialPageRoute(builder: (context) => const AddEmployeeScreen()),
+              );
+
+              if (newEmployee != null) {
+                setState(() {
+                  _employees.add(newEmployee);
+                });
+              }
             },
           ),
           const SizedBox(width: 8),
@@ -159,9 +188,9 @@ class EmployeeManagementScreen extends StatelessWidget {
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16.0).copyWith(top: 8),
-              itemCount: _sampleEmployees.length,
+              itemCount: _employees.length,
               itemBuilder: (context, index) {
-                return _buildEmployeeTile(_sampleEmployees[index]);
+                return _buildEmployeeTile(_employees[index]);
               },
             ),
           ),

@@ -42,13 +42,16 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'banana':
         return 'assets/images/chuoi.png'; // Đã cập nhật theo file bạn gửi
       case 'apple':
-        return 'assets/images/anh1.png'; // Giả định anh1.png là táo
+        return 'assets/images/tao.png'; // Giả định anh1.png là táo
       case 'coke':
-        return 'assets/images/coke.png';
+        return 'assets/images/nuoccoca.png';
       case 'diet_coke':
-        return 'assets/images/diet_coke.png';
+        return 'assets/images/dietcoca.png';
       case 'tomato':
-        return 'assets/images/tomato.png';
+        return 'assets/images/cachua.png';
+      case 'brocoli':
+        return 'assets/images/bongcai.png';
+
       default:
         return '';
     }
@@ -209,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
           onTap: () {
             Navigator.of(context).pop();
             Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const EmployeeManagementScreen()),
+              MaterialPageRoute(builder: (_) =>  EmployeeManagementScreen()),
             );
           },
         ),
@@ -291,6 +294,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Tách Widget Card Sản phẩm (Đã tối ưu UI theo mẫu)
   Widget _buildProductCard(Product p) {
+    print('🧩 DEBUG: ${p.name} có id là "${p.id}"');
+
     final img = _imageFor(p.id);
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
