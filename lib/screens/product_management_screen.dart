@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/product.dart';
 import '../services/db_service.dart';
-import 'add_product_screen.dart'; // Màn hình thêm/sửa sản phẩm
+import 'edit_product_screen.dart'; // Màn hình chỉnh sửa sản phẩm
+import 'add_product_screen.dart'; // Màn hình thêm sản phẩm
 
 class ProductManagementScreen extends StatefulWidget {
   const ProductManagementScreen({super.key});
 
   @override
-  State<ProductManagementScreen> createState() => _ProductManagementScreenState();
+  State<ProductManagementScreen> createState() =>
+      _ProductManagementScreenState();
 }
 
 class _ProductManagementScreenState extends State<ProductManagementScreen> {
@@ -26,10 +28,12 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
     if (stock <= 10) {
       status = 'Hết hàng';
       statusColor = Colors.red;
-    } else if (stock < 50) { // Từ 11 đến 49
+    } else if (stock < 50) {
+      // Từ 11 đến 49
       status = 'Sắp hết';
       statusColor = Colors.orange;
-    } else { // Từ 50 trở lên
+    } else {
+      // Từ 50 trở lên
       status = 'Còn hàng';
       statusColor = Colors.green;
     }
@@ -39,23 +43,27 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
 
   // Xóa sản phẩm khỏi Hive
   Future<void> _deleteProduct(BuildContext context, Product product) async {
-    final bool confirm = await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Xác nhận xóa'),
-        content: Text('Bạn có chắc chắn muốn xóa sản phẩm "${product.name}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Hủy'),
+    final bool confirm =
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Xác nhận xóa'),
+            content: Text(
+              'Bạn có chắc chắn muốn xóa sản phẩm "${product.name}"?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Hủy'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Xóa', style: TextStyle(color: Colors.red)),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Xóa', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    ) ?? false;
+        ) ??
+        false;
 
     if (confirm) {
       try {
@@ -63,13 +71,19 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
         // Sử dụng mounted check trước khi gọi ScaffoldMessenger
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Đã xóa sản phẩm ${product.name}'), backgroundColor: Colors.green),
+            SnackBar(
+              content: Text('Đã xóa sản phẩm ${product.name}'),
+              backgroundColor: Colors.green,
+            ),
           );
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Lỗi khi xóa: $e'), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text('Lỗi khi xóa: $e'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
@@ -78,9 +92,9 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
 
   // Chuyển hướng đến màn hình chỉnh sửa
   void _navigateToEdit(Product product) {
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => AddProductScreen(product: product),
-    ));
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => EditProductScreen(product: product)),
+    );
   }
 
   // Widget hiển thị một sản phẩm trong danh sách
@@ -114,8 +128,14 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Mã: ${product.id}', style: const TextStyle(fontSize: 12, color: Colors.black54)),
-            Text('${product.price.round().toString()} ₫ / ${product.unit}', style: const TextStyle(fontSize: 12, color: Colors.black87)),
+            Text(
+              'Mã: ${product.id}',
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
+            ),
+            Text(
+              '${product.price.round().toString()} ₫ / ${product.unit}',
+              style: const TextStyle(fontSize: 12, color: Colors.black87),
+            ),
           ],
         ),
 
@@ -129,10 +149,16 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
               children: [
                 Text(
                   'Tồn: ${product.stockQuantity}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(4),
@@ -166,7 +192,10 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                   value: 'delete',
                   child: ListTile(
                     leading: Icon(Icons.delete, color: Colors.red, size: 20),
-                    title: Text('Xóa sản phẩm', style: TextStyle(color: Colors.red)),
+                    title: Text(
+                      'Xóa sản phẩm',
+                      style: TextStyle(color: Colors.red),
+                    ),
                   ),
                 ),
               ],
@@ -183,7 +212,10 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Quản lý Sản phẩm', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Quản lý Sản phẩm',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.blue.shade600,
         foregroundColor: Colors.white,
       ),
@@ -215,7 +247,10 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
           // 2. Bộ lọc
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
             child: Row(
               children: [
                 _buildFilterChip('Tất cả'),
@@ -235,7 +270,10 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                 List<Product> allProducts = DBService.getAllProducts();
 
                 // Lọc theo tìm kiếm
-                List<Product> filteredProducts = DBService.searchProducts(_searchQuery, allProducts);
+                List<Product> filteredProducts = DBService.searchProducts(
+                  _searchQuery,
+                  allProducts,
+                );
 
                 // 💡 LOGIC LỌC THEO TRẠNG THÁI MỚI
                 if (_selectedFilter != 'Tất cả') {
@@ -255,7 +293,9 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
 
                 if (filteredProducts.isEmpty) {
                   return Center(
-                    child: Text('Không tìm thấy sản phẩm nào${_searchQuery.isNotEmpty ? ' khớp với tìm kiếm' : ''}.'),
+                    child: Text(
+                      'Không tìm thấy sản phẩm nào${_searchQuery.isNotEmpty ? ' khớp với tìm kiếm' : ''}.',
+                    ),
                   );
                 }
 
@@ -278,9 +318,9 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
       // Nút Thêm sản phẩm
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => const AddProductScreen(),
-          ));
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const AddProductScreen()));
         },
         icon: const Icon(Icons.add),
         label: const Text('Thêm Sản phẩm'),
@@ -313,7 +353,9 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
         ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
-          side: isSelected ? BorderSide(color: Colors.blue.shade400) : BorderSide.none,
+          side: isSelected
+              ? BorderSide(color: Colors.blue.shade400)
+              : BorderSide.none,
         ),
       ),
     );

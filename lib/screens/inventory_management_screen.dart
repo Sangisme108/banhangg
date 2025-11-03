@@ -4,9 +4,9 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../models/product.dart';
 import '../services/db_service.dart';
 import 'add_product_screen.dart';
-import 'export_inventory_screen.dart';
 import 'inventory_check_screen.dart';
 import 'low_stock_screen.dart'; // 💡 IMPORT MÀN HÌNH MỚI
+import 'inventory_history_screen.dart'; // Màn hình lịch sử xuất nhập kho
 
 class InventoryManagementScreen extends StatefulWidget {
   const InventoryManagementScreen({super.key});
@@ -17,7 +17,6 @@ class InventoryManagementScreen extends StatefulWidget {
 }
 
 class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
-
   static const int _MIN_STOCK = 50;
 
   // --- HÀM TÍNH TOÁN VÀ ĐIỀU HƯỚNG ---
@@ -38,39 +37,31 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
 
   // 💡 HÀM ĐIỀU HƯỚNG ĐẾN DANH SÁCH SẮP HẾT HÀNG
   void _onLowStockPressed() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const LowStockScreen(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const LowStockScreen()));
   }
 
   // (Giữ nguyên các hàm điều hướng khác: _onImportInventoryPressed, _onExportInventoryPressed, _onCheckInventoryPressed)
 
   void _onImportInventoryPressed() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const AddProductScreen(),
-      ),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const AddProductScreen()));
   }
 
-  void _onExportInventoryPressed() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const ExportInventoryScreen(),
-      ),
-    );
+  void _onHistoryInventoryPressed() async {
+    // Chuyển sang màn hình Lịch sử xuất/nhập kho
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const InventoryHistoryScreen()));
   }
 
   void _onCheckInventoryPressed() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const InventoryCheckScreen(),
-      ),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const InventoryCheckScreen()));
   }
-
 
   // --- WIDGET HỖ TRỢ (Giữ nguyên) ---
 
@@ -97,10 +88,7 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            title,
-            style: TextStyle(fontSize: 13, color: Colors.black87),
-          ),
+          Text(title, style: TextStyle(fontSize: 13, color: Colors.black87)),
         ],
       ),
     );
@@ -156,7 +144,9 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Mã: ${product.id}'),
-            Text('Giá: ${product.price.toStringAsFixed(0)} đ / ${product.unit}'),
+            Text(
+              'Giá: ${product.price.toStringAsFixed(0)} đ / ${product.unit}',
+            ),
           ],
         ),
         trailing: Column(
@@ -165,12 +155,19 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
           children: [
             Text(
               'Tồn: ${product.stockQuantity} ${product.unit}',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: statusColor),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: statusColor,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               status,
-              style: TextStyle(fontSize: 12, color: statusColor.withOpacity(0.8)),
+              style: TextStyle(
+                fontSize: 12,
+                color: statusColor.withOpacity(0.8),
+              ),
             ),
           ],
         ),
@@ -178,12 +175,14 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Quản lý Kho', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Quản lý Kho',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.blue.shade600,
         foregroundColor: Colors.white,
         centerTitle: false,
@@ -194,7 +193,10 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
         children: [
           // Thanh tìm kiếm (Giữ nguyên)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
             child: Container(
               height: 45,
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -230,14 +232,17 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
               final String totalValueStr = (stats['totalValue'] as double)
                   .toStringAsFixed(0)
                   .replaceAllMapped(
-                RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
                     (Match m) => '${m[1]}.',
-              );
+                  );
 
               final int lowStockCount = stats['lowStockCount'] as int;
 
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 8.0,
+                ),
                 child: Row(
                   children: [
                     Expanded(
@@ -249,13 +254,30 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Giá trị kho', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                              const Text(
+                                'Giá trị kho',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 13,
+                                ),
+                              ),
                               const SizedBox(height: 4),
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text('${totalValueStr} đ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)),
-                                  const Icon(Icons.inventory_2, color: Colors.green),
+                                  Text(
+                                    '${totalValueStr} đ',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Colors.green,
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.inventory_2,
+                                    color: Colors.green,
+                                  ),
                                 ],
                               ),
                             ],
@@ -264,7 +286,8 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
                       ),
                     ),
                     Expanded(
-                      child: GestureDetector( // 💡 WRAP BẰNG GESTUREDETECTOR HOẶC INKWELL
+                      child: GestureDetector(
+                        // 💡 WRAP BẰNG GESTUREDETECTOR HOẶC INKWELL
                         onTap: _onLowStockPressed, // GỌI HÀM MỚI
                         child: Card(
                           elevation: 1,
@@ -274,13 +297,30 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Sắp hết hàng', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                                const Text(
+                                  'Sắp hết hàng',
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 13,
+                                  ),
+                                ),
                                 const SizedBox(height: 4),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text('${lowStockCount} SP', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red)),
-                                    const Icon(Icons.warning_amber_rounded, color: Colors.red),
+                                    Text(
+                                      '${lowStockCount} SP',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.warning_amber_rounded,
+                                      color: Colors.red,
+                                    ),
                                   ],
                                 ),
                               ],
@@ -294,11 +334,14 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
               );
             },
           ),
-          // --- KẾT THÚC PHẦN THỐNG KÊ ---
 
+          // --- KẾT THÚC PHẦN THỐNG KÊ ---
           const Padding(
             padding: EdgeInsets.only(left: 16.0, top: 12.0),
-            child: Text('Tác vụ nhanh', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            child: Text(
+              'Tác vụ nhanh',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
           ),
 
           // --- Dãy 3 NÚT TÁC VỤ NHANH (Giữ nguyên) ---
@@ -313,9 +356,9 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
                   onTap: _onImportInventoryPressed,
                 ),
                 _buildQuickActionButton(
-                  title: 'Xuất hủy',
-                  icon: Icons.outbond_outlined,
-                  onTap: _onExportInventoryPressed,
+                  title: 'Lịch sử',
+                  icon: Icons.history,
+                  onTap: _onHistoryInventoryPressed,
                 ),
                 _buildQuickActionButton(
                   title: 'Kiểm kê',
@@ -330,7 +373,10 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
 
           const Padding(
             padding: EdgeInsets.only(left: 16.0, top: 8.0, bottom: 8.0),
-            child: Text('Danh sách tồn kho', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            child: Text(
+              'Danh sách tồn kho',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
           ),
 
           // PHẦN CUỘN: Danh sách sản phẩm (Giữ nguyên)
@@ -347,7 +393,11 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16.0),
+                  padding: const EdgeInsets.only(
+                    left: 16.0,
+                    right: 16.0,
+                    bottom: 16.0,
+                  ),
                   itemCount: products.length,
                   itemBuilder: (context, index) {
                     return _buildInventoryTile(context, products[index]);
