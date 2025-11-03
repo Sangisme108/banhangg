@@ -27,13 +27,17 @@ class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final Map<String, int> _cart = {};
   String? _currentUserEmail;
-
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  bool _isLoading = true;
   // *** INFINITE SCROLL LOGIC ***
   final ScrollController _scrollController = ScrollController();
   final int _productsPerPage = 6;
   int _loadedProductCount = 6;
   bool _isLoadingMore = false;
   // *****************************
+  List<Product> _allProducts = [];
+  List<Product> _displayedProducts = [];
 
 
   // Mapping ID sản phẩm sang đường dẫn hình ảnh
@@ -62,11 +66,13 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadCurrentUserCart();
     _scrollController.addListener(_onScroll);
+    _searchController.addListener(_onSearchChanged);
   }
-
   @override
   void dispose() {
     _scrollController.dispose();
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -114,6 +120,12 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     });
   }
+
+void _onSearchChanged() {
+  setState(() {
+    _searchQuery = _searchController.text.trim().toLowerCase();
+  });
+}
 
   // --- HÀM TÁCH WIDGET ---
 
@@ -269,28 +281,34 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Tách App Bar Title (Search Bar)
-  Widget _buildSearchBar() {
-    return Container(
-      height: 40,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
+// Tách App Bar Title (Search Bar)
+Widget _buildSearchBar() {
+  return Container(
+    height: 40,
+    decoration: BoxDecoration(
+      color: Colors.grey.shade100,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: TextField(
+      controller: _searchController, // Gắn controller
+      decoration: InputDecoration(
+        hintText: 'Search Store',
+        prefixIcon: const Icon(Icons.search, color: Colors.black45),
+        // Nút xoá (chỉ hiện khi có chữ)
+        suffixIcon: _searchQuery.isNotEmpty
+            ? IconButton(
+          icon: const Icon(Icons.clear, color: Colors.black45),
+          onPressed: () {
+            _searchController.clear(); // Xoá chữ và gọi _onSearchChanged
+          },
+        )
+            : null,
+        border: InputBorder.none,
+        contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
       ),
-      child: const Row(
-        children: [
-          SizedBox(width: 12),
-          Icon(Icons.search, color: Colors.black45),
-          SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'Search Store',
-              style: TextStyle(color: Colors.black45),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+    ),
+  );
+}
 
   // Tách Widget Card Sản phẩm (Đã tối ưu UI theo mẫu)
   Widget _buildProductCard(Product p) {
@@ -444,14 +462,32 @@ class _HomeScreenState extends State<HomeScreen> {
                 valueListenable: DBService.products().listenable(),
                 builder: (context, Box<Product> box, _) {
                   final allItems = box.values.toList().cast<Product>();
+                  final List<Product> filteredItems;
 
-                  final itemsToShow = allItems.take(_loadedProductCount).toList();
-                  final hasMore = allItems.length > itemsToShow.length;
-
-                  if (itemsToShow.isEmpty) {
-                    return const _NoProductsFound(); // Tách thành Widget riêng
+                  // 1. Lọc sản phẩm
+                  if (_searchQuery.isEmpty) {
+                    filteredItems = allItems; // Không tìm, dùng tất cả
+                  } else {
+                    filteredItems = allItems.where((product) {
+                      return product.name.toLowerCase().contains(_searchQuery);
+                    }).toList();
                   }
 
+                  // 2. ✅ SỬA LỖI Ở ĐÂY: Gán kết quả cho biến
+                  final itemsToShow = filteredItems.take(_loadedProductCount).toList();
+                  final hasMore = filteredItems.length > itemsToShow.length;
+
+                  // 3. Kiểm tra danh sách rỗng
+                  if (itemsToShow.isEmpty) {
+                    if (_searchQuery.isNotEmpty) {
+                      return const Center(
+                        child: Text('Không tìm thấy sản phẩm nào.'),
+                      );
+                    }
+                    return const _NoProductsFound();
+                  }
+
+                  // 4. Trả về GridView
                   return GridView.builder(
                     controller: _scrollController,
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -463,7 +499,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     itemCount: itemsToShow.length + (hasMore ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index == itemsToShow.length && hasMore) {
-                        return const _LoadingFooter(); // Tách thành Widget riêng
+                        return const _LoadingFooter();
                       }
 
                       final Product p = itemsToShow[index];

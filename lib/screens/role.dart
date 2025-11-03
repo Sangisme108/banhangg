@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
-import 'add_role_screen.dart'; // ✅ nhớ import file vừa tạo
 
-// Mô phỏng dữ liệu vai trò
-class AppRole {
-  final String name;
-  final String description;
-  final int employeeCount;
+// ✅ 1. Import DBService và User model
+import '../services/db_service.dart';
+import '../models/user.dart';
 
-  const AppRole({
-    required this.name,
-    required this.description,
-    required this.employeeCount,
-  });
-}
+// ⛔ LƯU Ý:
+// CSDL của bạn (model User) chỉ có 2 vai trò: 'owner' và 'staff'.
+// Vì vậy, màn hình này sẽ chỉ hiển thị 2 vai trò đó với số lượng
+// nhân viên chính xác.
+//
+// Nó sẽ KHÔNG hiển thị "Owner (Chủ cửa hàng)" hay "Kho"
+// như file hard-code cũ, vì các vai trò đó không tồn tại
+// trong CSDL thật của bạn.
 
 class RoleManagementScreen extends StatefulWidget {
   const RoleManagementScreen({super.key});
@@ -22,31 +21,51 @@ class RoleManagementScreen extends StatefulWidget {
 }
 
 class _RoleManagementScreenState extends State<RoleManagementScreen> {
-  final List<AppRole> _roles = [
-    const AppRole(
-      name: 'Owner (Chủ cửa hàng)',
-      description: 'Toàn quyền quản lý, bao gồm cả nhân viên và vai trò.',
-      employeeCount: 1,
-    ),
-    const AppRole(
-      name: 'Quản lý',
-      description: 'Quản lý sản phẩm, kho hàng, và xem báo cáo doanh thu.',
-      employeeCount: 2,
-    ),
-    const AppRole(
-      name: 'Nhân viên bán hàng',
-      description: 'Thực hiện giao dịch thanh toán và xem sản phẩm.',
-      employeeCount: 5,
-    ),
-    const AppRole(
-      name: 'Kho',
-      description: 'Chỉ được phép quản lý nhập/xuất kho.',
-      employeeCount: 3,
-    ),
-  ];
+  bool _isLoading = true;
+  int _ownerCount = 0; // Số lượng Quản lý (owner)
+  int _staffCount = 0; // Số lượng Nhân viên (staff)
+
+  @override
+  void initState() {
+    super.initState();
+    // ✅ 2. Tải số lượng nhân viên thật khi màn hình mở
+    _loadRoleCounts();
+  }
+
+  // ✅ 3. Hàm đọc CSDL Hive và đếm số lượng
+  Future<void> _loadRoleCounts() async {
+    setState(() => _isLoading = true);
+
+    try {
+      // Lấy tất cả user từ CSDL (giống hệt màn hình EmployeeManagement)
+      final usersBox = DBService.users();
+      final allUsers = usersBox.values.cast<User>().toList();
+
+      // Đếm số lượng 'owner' và 'staff'
+      final owners = allUsers.where((u) => u.role == 'owner').length;
+      final staff = allUsers.where((u) => u.role == 'staff').length;
+
+      // Cập nhật state để hiển thị
+      setState(() {
+        _ownerCount = owners;
+        _staffCount = staff;
+        _isLoading = false;
+      });
+    } catch (e) {
+      // Xử lý nếu có lỗi
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi tải dữ liệu vai trò: $e')),
+      );
+    }
+  }
 
   // Widget hiển thị mỗi dòng vai trò
-  Widget _buildRoleTile(AppRole role) {
+  // (Lấy từ file hard-code cũ của bạn)
+  Widget _buildRoleTile(
+      {required String name,
+        required String description,
+        required int employeeCount}) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
@@ -57,7 +76,7 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
         title: Text(
-          role.name,
+          name,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         subtitle: Column(
@@ -65,12 +84,12 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
           children: [
             const SizedBox(height: 4),
             Text(
-              role.description,
+              description,
               style: const TextStyle(color: Colors.black54, fontSize: 13),
             ),
             const SizedBox(height: 4),
             Text(
-              'Số nhân viên: ${role.employeeCount}',
+              'Số nhân viên: $employeeCount', // ✅ 4. Hiển thị số lượng thật
               style: const TextStyle(
                   color: Colors.black87,
                   fontWeight: FontWeight.w500,
@@ -81,33 +100,9 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
         trailing: const Icon(Icons.arrow_forward_ios,
             size: 16, color: Colors.grey),
         onTap: () {
-          // Nhấn vào vai trò → hiển thị dialog xoá
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: Text('Xoá vai trò "${role.name}"?'),
-              content: const Text('Bạn có chắc muốn xoá vai trò này không?'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Huỷ'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _roles.remove(role);
-                    });
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Đã xoá vai trò "${role.name}"')),
-                    );
-                  },
-                  child:
-                  const Text('Xoá', style: TextStyle(color: Colors.red)),
-                ),
-              ],
-            ),
-          );
+          // ✅ 5. Không làm gì khi nhấn
+          // (Vì vai trò được quản lý bên trong Employee,
+          // không thể sửa/xoá từ màn hình này)
         },
       ),
     );
@@ -130,30 +125,34 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline, size: 30),
-            onPressed: () async {
-              final newRole = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AddRoleScreen()),
-              );
-
-              if (newRole != null && newRole is AppRole) {
-                setState(() {
-                  _roles.add(newRole);
-                });
-              }
-            },
-          ),
+          // ✅ 6. Đã xoá nút Thêm (+)
+          // Nút này vô nghĩa vì file 'add_role_screen.dart'
+          // chỉ thêm vào danh sách giả, không thêm vào CSDL thật.
+          // Vai trò được gán khi Thêm/Sửa Nhân viên.
           const SizedBox(width: 8),
         ],
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemCount: _roles.length,
-        itemBuilder: (context, index) {
-          return _buildRoleTile(_roles[index]);
-        },
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+        // Thêm RefreshIndicator để kéo xuống tải lại
+        onRefresh: _loadRoleCounts,
+        child: ListView(
+          padding: const EdgeInsets.all(16.0),
+          children: [
+            // ✅ 7. Hiển thị 2 vai trò thật từ CSDL
+            _buildRoleTile(
+              name: 'Quản lý', // 'owner' được map thành 'Quản lý'
+              description: 'Quản lý sản phẩm, kho hàng, và xem báo cáo doanh thu.',
+              employeeCount: _ownerCount, // Số lượng thật
+            ),
+            _buildRoleTile(
+              name: 'Nhân viên', // 'staff' được map thành 'Nhân viên'
+              description: 'Thực hiện giao dịch thanh toán và xem sản phẩm.',
+              employeeCount: _staffCount, // Số lượng thật
+            ),
+          ],
+        ),
       ),
     );
   }
