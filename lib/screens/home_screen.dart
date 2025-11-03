@@ -12,6 +12,7 @@ import 'employee.dart';
 import 'role.dart';
 import 'order_management_screen.dart';
 import 'security_info_screen.dart';
+
 // --- WIDGET CHÍNH ---
 class HomeScreen extends StatefulWidget {
   final String role;
@@ -38,7 +39,6 @@ class _HomeScreenState extends State<HomeScreen> {
   // *****************************
   List<Product> _allProducts = [];
   List<Product> _displayedProducts = [];
-
 
   // Mapping ID sản phẩm sang đường dẫn hình ảnh
   String _imageFor(String id) {
@@ -68,6 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _scrollController.addListener(_onScroll);
     _searchController.addListener(_onSearchChanged);
   }
+
   @override
   void dispose() {
     _scrollController.dispose();
@@ -96,7 +97,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
       _loadMoreProducts();
     }
   }
@@ -121,11 +123,11 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-void _onSearchChanged() {
-  setState(() {
-    _searchQuery = _searchController.text.trim().toLowerCase();
-  });
-}
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text.trim().toLowerCase();
+    });
+  }
 
   // --- HÀM TÁCH WIDGET ---
 
@@ -149,10 +151,9 @@ void _onSearchChanged() {
     );
   }
 
-// Tách Menu Items
+  // Tách Menu Items
   List<Widget> _buildDrawerMenuItems() {
     final List<Widget> items = [
-
       // THÊM MỚI: Mục Thông tin bảo mật/Đổi mật khẩu (ĐÃ SỬA LỖI CÚ PHÁP)
       ListTile(
         leading: const Icon(Icons.lock_outline),
@@ -163,12 +164,12 @@ void _onSearchChanged() {
           // Điều hướng đến màn hình đổi mật khẩu
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (_) => const SecurityInfoScreen(), // SỬ DỤNG CLASS ĐÃ IMPORT
+              builder: (_) =>
+              const SecurityInfoScreen(), // SỬ DỤNG CLASS ĐÃ IMPORT
             ),
           );
         },
       ), // <--- DẤU PHẨY ĐÓNG LISTTILE NÀY LÀ CẦN THIẾT
-
       // Mục "Đơn hàng" hiện có (CHÚ Ý: Không cần dấu phẩy ở đây nếu không có mục tiếp theo)
       ListTile(
         leading: const Icon(Icons.shopping_bag_outlined),
@@ -178,9 +179,9 @@ void _onSearchChanged() {
           Navigator.of(context).pop();
 
           // Điều hướng đến màn hình Quản lý Đơn hàng
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) =>  OrderManagementScreen()),
-          );
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => OrderManagementScreen()));
         },
       ),
     ];
@@ -204,7 +205,9 @@ void _onSearchChanged() {
           onTap: () {
             Navigator.of(context).pop(); // Đóng Drawer
             Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ProductManagementScreen()),
+              MaterialPageRoute(
+                builder: (_) => const ProductManagementScreen(),
+              ),
             );
           },
         ),
@@ -214,7 +217,9 @@ void _onSearchChanged() {
           onTap: () {
             Navigator.of(context).pop(); // Đóng Drawer
             Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const InventoryManagementScreen()),
+              MaterialPageRoute(
+                builder: (_) => const InventoryManagementScreen(),
+              ),
             );
           },
         ),
@@ -224,7 +229,7 @@ void _onSearchChanged() {
           onTap: () {
             Navigator.of(context).pop();
             Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) =>  EmployeeManagementScreen()),
+              MaterialPageRoute(builder: (_) => EmployeeManagementScreen()),
             );
           },
         ),
@@ -246,9 +251,9 @@ void _onSearchChanged() {
   // Tách Profile Section trong Drawer
   Widget _buildProfileSection() {
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const ProfileViewScreen()),
-      ),
+      onTap: () => Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const ProfileViewScreen())),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
         child: Column(
@@ -281,34 +286,38 @@ void _onSearchChanged() {
   }
 
   // Tách App Bar Title (Search Bar)
-// Tách App Bar Title (Search Bar)
-Widget _buildSearchBar() {
-  return Container(
-    height: 40,
-    decoration: BoxDecoration(
-      color: Colors.grey.shade100,
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: TextField(
-      controller: _searchController, // Gắn controller
-      decoration: InputDecoration(
-        hintText: 'Search Store',
-        prefixIcon: const Icon(Icons.search, color: Colors.black45),
-        // Nút xoá (chỉ hiện khi có chữ)
-        suffixIcon: _searchQuery.isNotEmpty
-            ? IconButton(
-          icon: const Icon(Icons.clear, color: Colors.black45),
-          onPressed: () {
-            _searchController.clear(); // Xoá chữ và gọi _onSearchChanged
-          },
-        )
-            : null,
-        border: InputBorder.none,
-        contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+  // Tách App Bar Title (Search Bar)
+  Widget _buildSearchBar() {
+    return Container(
+      height: 40,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
       ),
-    ),
-  );
-}
+      child: TextField(
+        controller: _searchController, // Gắn controller
+        decoration: InputDecoration(
+          hintText: 'Search Store',
+          prefixIcon: const Icon(Icons.search, color: Colors.black45),
+          // Nút xoá (chỉ hiện khi có chữ)
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+            icon: const Icon(Icons.clear, color: Colors.black45),
+            onPressed: () {
+              _searchController
+                  .clear(); // Xoá chữ và gọi _onSearchChanged
+            },
+          )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 10,
+            horizontal: 8,
+          ),
+        ),
+      ),
+    );
+  }
 
   // Tách Widget Card Sản phẩm (Đã tối ưu UI theo mẫu)
   Widget _buildProductCard(Product p) {
@@ -317,81 +326,116 @@ Widget _buildSearchBar() {
     final img = _imageFor(p.id);
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: img.isNotEmpty
-                    ? Image.asset(
-                  img,
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  errorBuilder: (c, e, s) => Container(
-                    color: Colors.grey.shade100,
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.image, size: 36, color: Colors.black26),
-                  ),
-                )
-                    : Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Center(
-                    child: Icon(Icons.image, size: 36, color: Colors.black26),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          // Thêm vào giỏ khi chạm vào toàn bộ thẻ sản phẩm
+          if (p.stockQuantity <= 0) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Sản phẩm "${p.name}" đã hết hàng')),
+            );
+            return;
+          }
+          _addToCart(p);
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: img.isNotEmpty
+                      ? Image.asset(
+                    img,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    errorBuilder: (c, e, s) => Container(
+                      color: Colors.grey.shade100,
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.image,
+                        size: 36,
+                        color: Colors.black26,
+                      ),
+                    ),
+                  )
+                      : Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.image,
+                        size: 36,
+                        color: Colors.black26,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              p.name, // Ví dụ: Chuối tây
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-            ),
-            const SizedBox(height: 4),
-            // Dòng Khối lượng/Giá (Dòng nhỏ)
-            Text(
-              // Format theo mẫu: '500g, giá'
-            '${p.stockQuantity}, Giá',
-              style: const TextStyle(color: Colors.black54, fontSize: 13),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Giá tiền (Font lớn, đậm)
-                Text(
-                  // Hiển thị giá và thêm ký hiệu '$'
-                  '${p.price.toString()}\$',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
+              const SizedBox(height: 8),
+              Text(
+                p.name, // Ví dụ: Chuối tây
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
                 ),
-                // Nút Thêm (+)
-                GestureDetector(
-                  onTap: () async {
-                    _addToCart(p);
-                  },
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade400,
-                      borderRadius: BorderRadius.circular(8),
+              ),
+              const SizedBox(height: 4),
+              // Dòng Khối lượng/Giá (Dòng nhỏ)
+              Text(
+                // Format theo mẫu: '500g, giá'
+                '${p.stockQuantity}, Giá',
+                style: const TextStyle(color: Colors.black54, fontSize: 13),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Giá tiền (Font lớn, đậm)
+                  Text(
+                    // Hiển thị giá và thêm ký hiệu '$'
+                    '${p.price.toString()}\$',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
-                    child: const Icon(Icons.add, color: Colors.white),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  // Nút Thêm (+) - disabled nếu hết hàng
+                  GestureDetector(
+                    onTap: () async {
+                      // Nếu hết hàng, thông báo và không thêm
+                      if (p.stockQuantity <= 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Sản phẩm "${p.name}" đã hết hàng'),
+                          ),
+                        );
+                        return;
+                      }
+                      _addToCart(p);
+                    },
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: p.stockQuantity <= 0
+                            ? Colors.grey.shade400
+                            : Colors.orange.shade400,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.add, color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -399,6 +443,15 @@ Widget _buildSearchBar() {
 
   // Tách Logic Thêm vào giỏ hàng
   void _addToCart(Product p) {
+    // Kiểm tra tồn kho dựa vào số lượng hiện có trong giỏ
+    final current = _cart[p.id] ?? 0;
+    if (current + 1 > p.stockQuantity) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Đã hết hàng, không thể thêm ${p.name}.')),
+      );
+      return;
+    }
+
     setState(() {
       _cart.update(p.id, (v) => v + 1, ifAbsent: () => 1);
     });
@@ -410,7 +463,6 @@ Widget _buildSearchBar() {
       ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -464,17 +516,24 @@ Widget _buildSearchBar() {
                   final allItems = box.values.toList().cast<Product>();
                   final List<Product> filteredItems;
 
-                  // 1. Lọc sản phẩm
+                  // 1. Lọc sản phẩm theo truy vấn tìm kiếm (prefix match)
                   if (_searchQuery.isEmpty) {
                     filteredItems = allItems; // Không tìm, dùng tất cả
                   } else {
+                    final q = _searchQuery;
                     filteredItems = allItems.where((product) {
-                      return product.name.toLowerCase().contains(_searchQuery);
+                      final name = product.name.toLowerCase();
+                      // Nếu truy vấn dài hơn tên sản phẩm, không khớp
+                      if (q.length > name.length) return false;
+                      // So khớp tiền tố: gõ 1 ký tự -> lọc theo ký tự đầu, 2 ký tự -> 2 ký tự đầu, v.v.
+                      return name.startsWith(q);
                     }).toList();
                   }
 
                   // 2. ✅ SỬA LỖI Ở ĐÂY: Gán kết quả cho biến
-                  final itemsToShow = filteredItems.take(_loadedProductCount).toList();
+                  final itemsToShow = filteredItems
+                      .take(_loadedProductCount)
+                      .toList();
                   final hasMore = filteredItems.length > itemsToShow.length;
 
                   // 3. Kiểm tra danh sách rỗng
@@ -490,7 +549,8 @@ Widget _buildSearchBar() {
                   // 4. Trả về GridView
                   return GridView.builder(
                     controller: _scrollController,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       mainAxisSpacing: 12,
                       crossAxisSpacing: 12,
@@ -574,7 +634,10 @@ Widget _buildSearchBar() {
                     const SizedBox(height: 12),
                     const Text(
                       'Giỏ hàng',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Expanded(
@@ -586,7 +649,11 @@ Widget _buildSearchBar() {
                         itemBuilder: (context, i) {
                           final p = items[i];
                           final qty = _cart[p.id] ?? 0;
-                          return _buildCartItemTile(p, qty, modalSetState); // Tách Cart Item
+                          return _buildCartItemTile(
+                            p,
+                            qty,
+                            modalSetState,
+                          ); // Tách Cart Item
                         },
                       ),
                     ),
@@ -634,10 +701,21 @@ Widget _buildSearchBar() {
             },
           ),
           Text(qty.toString()),
-          // Increment
+          // Increment - chỉ khi còn trong kho
           IconButton(
             icon: const Icon(Icons.add_circle_outline),
             onPressed: () {
+              // Nếu đã đạt giới hạn tồn kho, không cho tăng
+              if ((qty + 1) > p.stockQuantity) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Không thể tăng số lượng. Chỉ còn ${p.stockQuantity} của ${p.name} trong kho.',
+                    ),
+                  ),
+                );
+                return;
+              }
               modalSetState(() {
                 _cart.update(p.id, (v) => v + 1, ifAbsent: () => 1);
               });
@@ -670,7 +748,9 @@ Widget _buildSearchBar() {
       children: [
         Expanded(
           child: ElevatedButton(
-            onPressed: cartIsEmpty ? null : () {
+            onPressed: cartIsEmpty
+                ? null
+                : () {
               Navigator.of(context).pop();
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -688,10 +768,15 @@ Widget _buildSearchBar() {
               backgroundColor: Colors.orange.shade400,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               elevation: 2,
             ),
-            child: const Text('Thanh toán', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Thanh toán',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
           ),
         ),
       ],
@@ -699,12 +784,17 @@ Widget _buildSearchBar() {
   }
 
   // Tách Dialog Xác nhận xoá
-  Future<bool?> _showDeleteConfirmation(BuildContext context, String productName) {
+  Future<bool?> _showDeleteConfirmation(
+      BuildContext context,
+      String productName,
+      ) {
     return showDialog<bool>(
       context: context,
       builder: (dctx) => AlertDialog(
         title: const Text('Xác nhận xoá'),
-        content: Text('Bạn có chắc muốn xoá "$productName" khỏi giỏ hàng không?'),
+        content: Text(
+          'Bạn có chắc muốn xoá "$productName" khỏi giỏ hàng không?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dctx).pop(false),

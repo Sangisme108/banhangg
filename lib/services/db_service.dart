@@ -27,7 +27,10 @@ class DBService {
     await Hive.openBox(cartsBox);
     await Hive.openBox(settingsBox);
 
-    // 3. Seed Data
+    // 3. Migrate product keys (if they were stored with numeric keys)
+    await _migrateProductsToIdKeys();
+
+    // 4. Seed Data
     await seedProducts();
     await seedUsers();
   }
@@ -46,17 +49,58 @@ class DBService {
     if (box.isEmpty) {
       final List<Product> sampleProducts = [
         // ĐÃ SỬA: Dữ liệu mẫu dùng unit và stockQuantity
-        Product(id: 'banana', name: 'Chuối tây', price: 3000.0, unit: 'nải', stockQuantity: 15),
-        Product(id: 'apple', name: 'Táo đỏ', price: 20000.0, unit: 'kg', stockQuantity: 50),
-        Product(id: 'coke', name: 'Nước Coke', price: 10000.0, unit: 'lon', stockQuantity: 100),
-        Product(id: 'diet_coke', name: 'Diet Coke', price: 12000.0, unit: 'lon', stockQuantity: 80),
-        Product(id: 'tomato', name: 'Cà chua', price: 15000.0, unit: 'kg', stockQuantity: 60),
-        Product(id: 'brocoli', name: 'Bông cải', price: 25000.0, unit: 'cây', stockQuantity: 30),
+        Product(
+          id: 'banana',
+          name: 'Chuối tây',
+          price: 3000.0,
+          unit: 'nải',
+          stockQuantity: 15,
+        ),
+        Product(
+          id: 'apple',
+          name: 'Táo đỏ',
+          price: 20000.0,
+          unit: 'kg',
+          stockQuantity: 50,
+        ),
+        Product(
+          id: 'coke',
+          name: 'Nước Coke',
+          price: 10000.0,
+          unit: 'lon',
+          stockQuantity: 100,
+        ),
+        Product(
+          id: 'diet_coke',
+          name: 'Diet Coke',
+          price: 12000.0,
+          unit: 'lon',
+          stockQuantity: 80,
+        ),
+        Product(
+          id: 'tomato',
+          name: 'Cà chua',
+          price: 15000.0,
+          unit: 'kg',
+          stockQuantity: 60,
+        ),
+        Product(
+          id: 'brocoli',
+          name: 'Bông cải',
+          price: 25000.0,
+          unit: 'cây',
+          stockQuantity: 30,
+        ),
       ];
 
-      await box.addAll(sampleProducts);
+      // Save using product.id as the Hive key so lookups by id work
+      for (final p in sampleProducts) {
+        await box.put(p.id, p);
+      }
       // 💡 ĐÃ SỬA LỖI: Dùng print thay cho debugPrint
-      print('--- ĐÃ XÓA VÀ TẠO ${sampleProducts.length} SẢN PHẨM MẪU THÀNH CÔNG ---');
+      print(
+        '--- ĐÃ XÓA VÀ TẠO ${sampleProducts.length} SẢN PHẨM MẪU THÀNH CÔNG ---',
+      );
     }
   }
 
@@ -68,6 +112,24 @@ class DBService {
     }
   }
 
+  // Migrate products stored with numeric keys to use product.id as key.
+  // This ensures products().get(productId) works correctly.
+  static Future<void> _migrateProductsToIdKeys() async {
+    final box = products();
+    // Copy current mapping to avoid concurrent modification while iterating
+    final current = Map<dynamic, Product>.from(
+      box.toMap().cast<dynamic, Product>(),
+    );
+    for (final e in current.entries) {
+      final key = e.key;
+      final product = e.value;
+      if (key is! String) {
+        // Move entry to use product.id as key
+        await box.put(product.id, product);
+        await box.delete(key);
+      }
+    }
+  }
 
   // --- LOGIC QUẢN LÝ KHO & BÁN HÀNG ---
 
@@ -119,8 +181,12 @@ class DBService {
     }
   }
 
-  static Future<void> saveCartForUser(String email, Map<String, int> cart) async {
-    final Map<String, int> cleanCart = Map.from(cart)..removeWhere((key, value) => value <= 0);
+  static Future<void> saveCartForUser(
+    String email,
+    Map<String, int> cart,
+  ) async {
+    final Map<String, int> cleanCart = Map.from(cart)
+      ..removeWhere((key, value) => value <= 0);
     await carts().put(email, cleanCart);
   }
 
@@ -130,9 +196,11 @@ class DBService {
     }
     final lowerQuery = query.toLowerCase();
     return source
-        .where((p) =>
-    p.name.toLowerCase().contains(lowerQuery) ||
-        p.id.toLowerCase().contains(lowerQuery))
+        .where(
+          (p) =>
+              p.name.toLowerCase().contains(lowerQuery) ||
+              p.id.toLowerCase().contains(lowerQuery),
+        )
         .toList();
   }
 }

@@ -32,7 +32,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
     if (_selectedPaymentMethod == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Vui lòng chọn phương thức thanh toán!')),
+          const SnackBar(
+            content: Text('Vui lòng chọn phương thức thanh toán!'),
+          ),
         );
       }
       return;
@@ -54,12 +56,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
         setState(() => _isProcessing = false);
         return;
       }
-      orderLines.add(OrderLine(
-        productId: product.id,
-        productName: product.name,
-        quantity: entry.value,
-        pricePerUnit: product.price,
-      ));
+      orderLines.add(
+        OrderLine(
+          productId: product.id,
+          productName: product.name,
+          quantity: entry.value,
+          pricePerUnit: product.price,
+        ),
+      );
     }
 
     // 2. Tạo và lưu đơn hàng
@@ -87,7 +91,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
           ? 'Ngân hàng'
           : 'Ví điện tử';
 
-      Navigator.pushAndRemoveUntil(
+      // Thay vì xóa toàn bộ stack (vì làm mất trạng thái tài khoản),
+      // ta chỉ thay thế màn hình Payment bằng OrderSuccess để giữ
+      // Home/Checkout trong stack (và giữ state của tài khoản hiện tại).
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (context) => OrderSuccessScreen(
@@ -95,7 +102,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
             paymentMethod: paymentMethodString,
           ),
         ),
-            (Route<dynamic> route) => false, // Xóa tất cả các màn hình trước đó
       );
     }
   }
@@ -105,7 +111,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: const Text('Thanh toán', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Thanh toán',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Colors.black,
@@ -132,12 +141,23 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF5C6BC0),
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   disabledBackgroundColor: Colors.grey,
                 ),
                 child: _isProcessing
-                    ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 3)
-                    : const Text('Xác nhận thanh toán', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    ? const CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 3,
+                      )
+                    : const Text(
+                        'Xác nhận thanh toán',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
             ),
           ),
@@ -156,15 +176,26 @@ class _PaymentScreenState extends State<PaymentScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Chi tiết hóa đơn', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text(
+              'Chi tiết hóa đơn',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             const Divider(height: 24, thickness: 1),
             ...widget.cartForDisplay.entries.map((entry) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4.0),
                 child: Row(
                   children: [
-                    Expanded(child: Text(entry.key, style: const TextStyle(fontSize: 16))),
-                    Text('x${entry.value}', style: const TextStyle(fontSize: 16)),
+                    Expanded(
+                      child: Text(
+                        entry.key,
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ),
+                    Text(
+                      'x${entry.value}',
+                      style: const TextStyle(fontSize: 16),
+                    ),
                   ],
                 ),
               );
@@ -173,10 +204,17 @@ class _PaymentScreenState extends State<PaymentScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Tổng cộng:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text(
+                  'Tổng cộng:',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
                 Text(
                   '${widget.totalAmount.toStringAsFixed(0)} ₫',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.redAccent),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.redAccent,
+                  ),
                 ),
               ],
             ),
@@ -196,25 +234,50 @@ class _PaymentScreenState extends State<PaymentScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Phương thức thanh toán', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text(
+              'Phương thức thanh toán',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
-            _buildPaymentOption(icon: Icons.money, title: 'Tiền mặt', value: 'cash'),
-            _buildPaymentOption(icon: Icons.account_balance, title: 'Ngân hàng', value: 'bank'),
-            _buildPaymentOption(icon: Icons.wallet, title: 'Ví điện tử', value: 'e_wallet'),
+            _buildPaymentOption(
+              icon: Icons.money,
+              title: 'Tiền mặt',
+              value: 'cash',
+            ),
+            _buildPaymentOption(
+              icon: Icons.account_balance,
+              title: 'Ngân hàng',
+              value: 'bank',
+            ),
+            _buildPaymentOption(
+              icon: Icons.wallet,
+              title: 'Ví điện tử',
+              value: 'e_wallet',
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPaymentOption({required IconData icon, required String title, required String value}) {
+  Widget _buildPaymentOption({
+    required IconData icon,
+    required String title,
+    required String value,
+  }) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
       elevation: 0,
-      color: _selectedPaymentMethod == value ? Colors.blue.shade50 : Colors.white,
+      color: _selectedPaymentMethod == value
+          ? Colors.blue.shade50
+          : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
-        side: BorderSide(color: _selectedPaymentMethod == value ? Colors.blue.shade200 : Colors.grey.shade300),
+        side: BorderSide(
+          color: _selectedPaymentMethod == value
+              ? Colors.blue.shade200
+              : Colors.grey.shade300,
+        ),
       ),
       child: InkWell(
         onTap: () => setState(() => _selectedPaymentMethod = value),
@@ -225,11 +288,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
             children: [
               Icon(icon, color: Colors.blue.shade700),
               const SizedBox(width: 12),
-              Expanded(child: Text(title, style: const TextStyle(fontSize: 16))),
+              Expanded(
+                child: Text(title, style: const TextStyle(fontSize: 16)),
+              ),
               Radio<String>(
                 value: value,
                 groupValue: _selectedPaymentMethod,
-                onChanged: (newValue) => setState(() => _selectedPaymentMethod = newValue),
+                onChanged: (newValue) =>
+                    setState(() => _selectedPaymentMethod = newValue),
                 activeColor: Colors.blue.shade700,
               ),
             ],
