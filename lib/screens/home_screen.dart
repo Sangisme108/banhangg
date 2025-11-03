@@ -28,13 +28,17 @@ class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final Map<String, int> _cart = {};
   String? _currentUserEmail;
-
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  bool _isLoading = true;
   // *** INFINITE SCROLL LOGIC ***
   final ScrollController _scrollController = ScrollController();
   final int _productsPerPage = 6;
   int _loadedProductCount = 6;
   bool _isLoadingMore = false;
   // *****************************
+  List<Product> _allProducts = [];
+  List<Product> _displayedProducts = [];
 
   // Mapping ID sản phẩm sang đường dẫn hình ảnh
   String _imageFor(String id) {
@@ -62,11 +66,14 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadCurrentUserCart();
     _scrollController.addListener(_onScroll);
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -116,6 +123,12 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text.trim().toLowerCase();
+    });
+  }
+
   // --- HÀM TÁCH WIDGET ---
 
   // Tách Widget Drawer
@@ -152,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) =>
-                  const SecurityInfoScreen(), // SỬ DỤNG CLASS ĐÃ IMPORT
+              const SecurityInfoScreen(), // SỬ DỤNG CLASS ĐÃ IMPORT
             ),
           );
         },
@@ -273,6 +286,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Tách App Bar Title (Search Bar)
+  // Tách App Bar Title (Search Bar)
   Widget _buildSearchBar() {
     return Container(
       height: 40,
@@ -280,18 +294,27 @@ class _HomeScreenState extends State<HomeScreen> {
         color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: const Row(
-        children: [
-          SizedBox(width: 12),
-          Icon(Icons.search, color: Colors.black45),
-          SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'Search Store',
-              style: TextStyle(color: Colors.black45),
-            ),
+      child: TextField(
+        controller: _searchController, // Gắn controller
+        decoration: InputDecoration(
+          hintText: 'Search Store',
+          prefixIcon: const Icon(Icons.search, color: Colors.black45),
+          // Nút xoá (chỉ hiện khi có chữ)
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+            icon: const Icon(Icons.clear, color: Colors.black45),
+            onPressed: () {
+              _searchController
+                  .clear(); // Xoá chữ và gọi _onSearchChanged
+            },
+          )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 10,
+            horizontal: 8,
           ),
-        ],
+        ),
       ),
     );
   }
@@ -325,32 +348,32 @@ class _HomeScreenState extends State<HomeScreen> {
                   borderRadius: BorderRadius.circular(8),
                   child: img.isNotEmpty
                       ? Image.asset(
-                          img,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          errorBuilder: (c, e, s) => Container(
-                            color: Colors.grey.shade100,
-                            alignment: Alignment.center,
-                            child: const Icon(
-                              Icons.image,
-                              size: 36,
-                              color: Colors.black26,
-                            ),
-                          ),
-                        )
+                    img,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    errorBuilder: (c, e, s) => Container(
+                      color: Colors.grey.shade100,
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.image,
+                        size: 36,
+                        color: Colors.black26,
+                      ),
+                    ),
+                  )
                       : Container(
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.image,
-                              size: 36,
-                              color: Colors.black26,
-                            ),
-                          ),
-                        ),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.image,
+                        size: 36,
+                        color: Colors.black26,
+                      ),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -491,29 +514,52 @@ class _HomeScreenState extends State<HomeScreen> {
                 valueListenable: DBService.products().listenable(),
                 builder: (context, Box<Product> box, _) {
                   final allItems = box.values.toList().cast<Product>();
+                  final List<Product> filteredItems;
 
-                  final itemsToShow = allItems
-                      .take(_loadedProductCount)
-                      .toList();
-                  final hasMore = allItems.length > itemsToShow.length;
-
-                  if (itemsToShow.isEmpty) {
-                    return const _NoProductsFound(); // Tách thành Widget riêng
+                  // 1. Lọc sản phẩm theo truy vấn tìm kiếm (prefix match)
+                  if (_searchQuery.isEmpty) {
+                    filteredItems = allItems; // Không tìm, dùng tất cả
+                  } else {
+                    final q = _searchQuery;
+                    filteredItems = allItems.where((product) {
+                      final name = product.name.toLowerCase();
+                      // Nếu truy vấn dài hơn tên sản phẩm, không khớp
+                      if (q.length > name.length) return false;
+                      // So khớp tiền tố: gõ 1 ký tự -> lọc theo ký tự đầu, 2 ký tự -> 2 ký tự đầu, v.v.
+                      return name.startsWith(q);
+                    }).toList();
                   }
 
+                  // 2. ✅ SỬA LỖI Ở ĐÂY: Gán kết quả cho biến
+                  final itemsToShow = filteredItems
+                      .take(_loadedProductCount)
+                      .toList();
+                  final hasMore = filteredItems.length > itemsToShow.length;
+
+                  // 3. Kiểm tra danh sách rỗng
+                  if (itemsToShow.isEmpty) {
+                    if (_searchQuery.isNotEmpty) {
+                      return const Center(
+                        child: Text('Không tìm thấy sản phẩm nào.'),
+                      );
+                    }
+                    return const _NoProductsFound();
+                  }
+
+                  // 4. Trả về GridView
                   return GridView.builder(
                     controller: _scrollController,
                     gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                          childAspectRatio: 3 / 4,
-                        ),
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 3 / 4,
+                    ),
                     itemCount: itemsToShow.length + (hasMore ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index == itemsToShow.length && hasMore) {
-                        return const _LoadingFooter(); // Tách thành Widget riêng
+                        return const _LoadingFooter();
                       }
 
                       final Product p = itemsToShow[index];
@@ -598,18 +644,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: items.isEmpty
                           ? const Center(child: Text('Giỏ hàng trống'))
                           : ListView.builder(
-                              controller: controller,
-                              itemCount: items.length,
-                              itemBuilder: (context, i) {
-                                final p = items[i];
-                                final qty = _cart[p.id] ?? 0;
-                                return _buildCartItemTile(
-                                  p,
-                                  qty,
-                                  modalSetState,
-                                ); // Tách Cart Item
-                              },
-                            ),
+                        controller: controller,
+                        itemCount: items.length,
+                        itemBuilder: (context, i) {
+                          final p = items[i];
+                          final qty = _cart[p.id] ?? 0;
+                          return _buildCartItemTile(
+                            p,
+                            qty,
+                            modalSetState,
+                          ); // Tách Cart Item
+                        },
+                      ),
                     ),
                     const SizedBox(height: 8),
                     _buildCheckoutButton(items.isEmpty), // Tách Checkout Button
@@ -705,19 +751,19 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: cartIsEmpty
                 ? null
                 : () {
-                    Navigator.of(context).pop();
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => CheckoutScreen(
-                          cart: Map.from(_cart),
-                          onCheckoutComplete: () async {
-                            setState(() => _cart.clear());
-                            await _persistCart();
-                          },
-                        ),
-                      ),
-                    );
-                  },
+              Navigator.of(context).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => CheckoutScreen(
+                    cart: Map.from(_cart),
+                    onCheckoutComplete: () async {
+                      setState(() => _cart.clear());
+                      await _persistCart();
+                    },
+                  ),
+                ),
+              );
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.orange.shade400,
               foregroundColor: Colors.white,
@@ -739,9 +785,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Tách Dialog Xác nhận xoá
   Future<bool?> _showDeleteConfirmation(
-    BuildContext context,
-    String productName,
-  ) {
+      BuildContext context,
+      String productName,
+      ) {
     return showDialog<bool>(
       context: context,
       builder: (dctx) => AlertDialog(
