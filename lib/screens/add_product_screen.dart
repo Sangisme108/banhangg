@@ -1,12 +1,15 @@
-// lib/screens/add_product_screen.dart
+// lib/screens/add_product_screen.dart (ĐÃ CHỈNH SỬA)
 import 'package:flutter/material.dart';
 import '../models/product.dart';
 import '../services/db_service.dart';
 
 class AddProductScreen extends StatefulWidget {
-  // Tham số 'product' là tùy chọn, dùng cho trường hợp chỉnh sửa sản phẩm cũ
   final Product? product;
 
+  // Thêm tham số isAddingStock để phân biệt mục đích:
+  // - false (mặc định): Thêm mới hoặc Sửa chi tiết (ghi đè tồn kho)
+  // - true: Chỉ để nhập thêm (cộng dồn tồn kho)
+  // Tuy nhiên, theo logic mới, ta chỉ giữ lại logic: Thêm mới và Chỉnh sửa (ghi đè tồn kho)
   const AddProductScreen({super.key, this.product});
 
   @override
@@ -70,36 +73,37 @@ class _AddProductScreenState extends State<AddProductScreen> {
       final String name = _nameController.text.trim();
       final double price = double.parse(_priceController.text);
       final String unit = _unitController.text.trim();
-      final int stockQuantity = int.parse(_stockQuantityController.text);
-
-      final Product newProduct = Product(
-        id: id,
-        name: name,
-        price: price,
-        unit: unit,
-        stockQuantity: stockQuantity,
-      );
+      final int stockQuantity = int.parse(_stockQuantityController.text); // Lượng tồn kho mới
 
       final box = DBService.products();
 
       if (_isEditing) {
-        // CHẾ ĐỘ CHỈNH SỬA: SỬ DỤNG .save() TRỰC TIẾP TRÊN HiveObject
-        // Vì widget.product đã là một Product được lấy từ Hive
-        widget.product!.name = newProduct.name;
-        widget.product!.price = newProduct.price;
-        widget.product!.unit = newProduct.unit;
-        widget.product!.stockQuantity = newProduct.stockQuantity;
-        await widget.product!.save(); // 💡 ĐÃ SỬA LỖI LƯU
+        // CHẾ ĐỘ CHỈNH SỬA/NHẬP KHO (GHI ĐÈ TỒN KHO):
+        widget.product!.name = name;
+        widget.product!.price = price;
+        widget.product!.unit = unit;
+        widget.product!.stockQuantity = stockQuantity; // GHI ĐÈ số lượng
+        await widget.product!.save();
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Cập nhật sản phẩm thành công!'), backgroundColor: Colors.green),
         );
+        Navigator.of(context).pop();
       } else {
-        // CHẾ ĐỘ THÊM MỚI: SỬ DỤNG box.put()
-        if (box.containsKey(newProduct.id)) {
+        // CHẾ ĐỘ THÊM MỚI:
+        if (box.containsKey(id)) {
           throw Exception('Mã sản phẩm đã tồn tại. Vui lòng chọn Mã khác.');
         }
-        await box.put(newProduct.id, newProduct); // 💡 ĐÃ SỬA LỖI LƯU
+
+        final Product newProduct = Product(
+          id: id,
+          name: name,
+          price: price,
+          unit: unit,
+          stockQuantity: stockQuantity, // Tồn kho ban đầu
+        );
+
+        await box.put(newProduct.id, newProduct);
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Thêm sản phẩm thành công!'), backgroundColor: Colors.green),
@@ -110,11 +114,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
         _unitController.clear();
         _stockQuantityController.text = '0';
         _idController.clear();
-      }
-
-      // Đóng màn hình sau khi lưu nếu là chế độ chỉnh sửa
-      if (_isEditing) {
-        Navigator.of(context).pop();
       }
 
     } catch (e) {
@@ -219,9 +218,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
               // Số lượng tồn kho
               TextFormField(
                 controller: _stockQuantityController,
-                decoration: const InputDecoration(
-                  labelText: 'Tồn kho hiện tại',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: _isEditing ? 'Tồn kho MỚI (Ghi đè)' : 'Tồn kho Ban đầu',
+                  border: const OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
                 validator: (value) {

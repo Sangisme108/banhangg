@@ -1,5 +1,4 @@
 import 'package:hive_flutter/hive_flutter.dart';
-// KHÔNG cần import 'package:flutter/foundation.dart' nữa vì đã dùng print()
 import '../models/product.dart';
 import '../models/user.dart';
 import '../models/order.dart';
@@ -48,7 +47,6 @@ class DBService {
     final box = products();
     if (box.isEmpty) {
       final List<Product> sampleProducts = [
-        // ĐÃ SỬA: Dữ liệu mẫu dùng unit và stockQuantity
         Product(
           id: 'banana',
           name: 'Chuối tây',
@@ -93,14 +91,11 @@ class DBService {
         ),
       ];
 
-      // Save using product.id as the Hive key so lookups by id work
       for (final p in sampleProducts) {
         await box.put(p.id, p);
       }
-      // 💡 ĐÃ SỬA LỖI: Dùng print thay cho debugPrint
-      print(
-        '--- ĐÃ XÓA VÀ TẠO ${sampleProducts.length} SẢN PHẨM MẪU THÀNH CÔNG ---',
-      );
+
+      print('--- ĐÃ TẠO ${sampleProducts.length} SẢN PHẨM MẪU ---');
     }
   }
 
@@ -112,20 +107,29 @@ class DBService {
     }
   }
 
-  // Migrate products stored with numeric keys to use product.id as key.
-  // This ensures products().get(productId) works correctly.
+  // ✅ FIXED: tránh trùng instance HiveObject khi đổi key
   static Future<void> _migrateProductsToIdKeys() async {
     final box = products();
-    // Copy current mapping to avoid concurrent modification while iterating
     final current = Map<dynamic, Product>.from(
       box.toMap().cast<dynamic, Product>(),
     );
+
     for (final e in current.entries) {
       final key = e.key;
-      final product = e.value;
+      final oldProduct = e.value;
+
+      // Chỉ xử lý nếu key không phải String
       if (key is! String) {
-        // Move entry to use product.id as key
-        await box.put(product.id, product);
+        // Tạo bản sao mới để tránh lỗi instance trùng key
+        final newProduct = Product(
+          id: oldProduct.id,
+          name: oldProduct.name,
+          price: oldProduct.price,
+          unit: oldProduct.unit,
+          stockQuantity: oldProduct.stockQuantity,
+        );
+
+        await box.put(newProduct.id, newProduct);
         await box.delete(key);
       }
     }
@@ -133,20 +137,17 @@ class DBService {
 
   // --- LOGIC QUẢN LÝ KHO & BÁN HÀNG ---
 
-  // Tên hàm đã được chuẩn hóa là saveOrder
   static Future<void> saveOrder(Order order) async {
     await orders().put(order.id, order);
 
-    // Cập nhật tồn kho
     for (var line in order.items) {
       final product = products().get(line.productId);
       if (product != null) {
         product.stockQuantity -= line.quantity;
-        // Đảm bảo tồn kho không âm
         if (product.stockQuantity < 0) {
           product.stockQuantity = 0;
         }
-        await product.save(); // Lưu lại sản phẩm đã được cập nhật tồn kho
+        await product.save();
       }
     }
   }
@@ -157,7 +158,6 @@ class DBService {
 
   static List<Order> getAllOrders() {
     final allOrders = orders().values.cast<Order>().toList();
-    // Sắp xếp đơn hàng mới nhất lên đầu
     allOrders.sort((a, b) => b.orderDate.compareTo(a.orderDate));
     return allOrders;
   }
@@ -167,7 +167,6 @@ class DBService {
   }
 
   static double getTotalRevenue() {
-    // Tính tổng doanh thu từ tất cả các đơn hàng
     return orders().values.fold(0.0, (sum, order) => sum + order.totalAmount);
   }
 
@@ -182,9 +181,9 @@ class DBService {
   }
 
   static Future<void> saveCartForUser(
-    String email,
-    Map<String, int> cart,
-  ) async {
+      String email,
+      Map<String, int> cart,
+      ) async {
     final Map<String, int> cleanCart = Map.from(cart)
       ..removeWhere((key, value) => value <= 0);
     await carts().put(email, cleanCart);
@@ -198,9 +197,9 @@ class DBService {
     return source
         .where(
           (p) =>
-              p.name.toLowerCase().contains(lowerQuery) ||
-              p.id.toLowerCase().contains(lowerQuery),
-        )
+      p.name.toLowerCase().contains(lowerQuery) ||
+          p.id.toLowerCase().contains(lowerQuery),
+    )
         .toList();
   }
 }
