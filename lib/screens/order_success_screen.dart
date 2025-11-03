@@ -1,7 +1,7 @@
 // dart
 // lib/screens/order_success_screen.dart
 import 'package:flutter/material.dart';
-import 'home_screen.dart'; // Import màn hình chính của bạn
+// Note: do not recreate HomeScreen here; we'll pop back to the existing HomeScreen
 
 class OrderSuccessScreen extends StatelessWidget {
   final String totalAmount;
@@ -58,7 +58,9 @@ class OrderSuccessScreen extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Chức năng in đang được phát triển!')),
+                  const SnackBar(
+                    content: Text('Chức năng in đang được phát triển!'),
+                  ),
                 );
               },
               icon: const Icon(Icons.print),
@@ -67,26 +69,19 @@ class OrderSuccessScreen extends StatelessWidget {
                 backgroundColor: const Color(0xFF5C6BC0),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 15),
-                textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                textStyle: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             const SizedBox(height: 16),
 
-            // Nút "Về trang chủ" - ĐÃ SỬA LỖI ĐIỀU HƯỚNG
+            // Nút "Về trang chủ" - trở về HomeScreen hiện có (không đổi tài khoản)
             OutlinedButton.icon(
               onPressed: () {
-                // SỬ DỤNG pushAndRemoveUntil ĐỂ TẠO MỘT TRANG HOME MỚI VÀ XÓA HẾT CÁC TRANG CŨ
-                // Nếu HomeScreen của bạn có tham số bắt buộc, bạn cần truyền nó vào đây!
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => HomeScreen(
-                      role: 'customer', // pass required role
-                      onLogout: () {},   // provide required onLogout handler
-                    ),
-                  ),
-                      (Route<dynamic> route) => false, // Điều kiện: loại bỏ TẤT CẢ các route cũ
-                );
+                // Pop mọi route tới route đầu tiên trong stack (HomeScreen gốc)
+                Navigator.of(context).popUntil((route) => route.isFirst);
               },
               icon: const Icon(Icons.home),
               label: const Text('Về trang chủ'),
@@ -94,7 +89,10 @@ class OrderSuccessScreen extends StatelessWidget {
                 foregroundColor: Colors.grey.shade700,
                 side: BorderSide(color: Colors.grey.shade400),
                 padding: const EdgeInsets.symmetric(vertical: 15),
-                textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                textStyle: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             const Spacer(),

@@ -12,6 +12,7 @@ import 'employee.dart';
 import 'role.dart';
 import 'order_management_screen.dart';
 import 'security_info_screen.dart';
+
 // --- WIDGET CHÍNH ---
 class HomeScreen extends StatefulWidget {
   final String role;
@@ -34,7 +35,6 @@ class _HomeScreenState extends State<HomeScreen> {
   int _loadedProductCount = 6;
   bool _isLoadingMore = false;
   // *****************************
-
 
   // Mapping ID sản phẩm sang đường dẫn hình ảnh
   String _imageFor(String id) {
@@ -90,7 +90,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
       _loadMoreProducts();
     }
   }
@@ -137,10 +138,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-// Tách Menu Items
+  // Tách Menu Items
   List<Widget> _buildDrawerMenuItems() {
     final List<Widget> items = [
-
       // THÊM MỚI: Mục Thông tin bảo mật/Đổi mật khẩu (ĐÃ SỬA LỖI CÚ PHÁP)
       ListTile(
         leading: const Icon(Icons.lock_outline),
@@ -151,12 +151,12 @@ class _HomeScreenState extends State<HomeScreen> {
           // Điều hướng đến màn hình đổi mật khẩu
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (_) => const SecurityInfoScreen(), // SỬ DỤNG CLASS ĐÃ IMPORT
+              builder: (_) =>
+                  const SecurityInfoScreen(), // SỬ DỤNG CLASS ĐÃ IMPORT
             ),
           );
         },
       ), // <--- DẤU PHẨY ĐÓNG LISTTILE NÀY LÀ CẦN THIẾT
-
       // Mục "Đơn hàng" hiện có (CHÚ Ý: Không cần dấu phẩy ở đây nếu không có mục tiếp theo)
       ListTile(
         leading: const Icon(Icons.shopping_bag_outlined),
@@ -166,9 +166,9 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.of(context).pop();
 
           // Điều hướng đến màn hình Quản lý Đơn hàng
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) =>  OrderManagementScreen()),
-          );
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => OrderManagementScreen()));
         },
       ),
     ];
@@ -192,7 +192,9 @@ class _HomeScreenState extends State<HomeScreen> {
           onTap: () {
             Navigator.of(context).pop(); // Đóng Drawer
             Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ProductManagementScreen()),
+              MaterialPageRoute(
+                builder: (_) => const ProductManagementScreen(),
+              ),
             );
           },
         ),
@@ -202,7 +204,9 @@ class _HomeScreenState extends State<HomeScreen> {
           onTap: () {
             Navigator.of(context).pop(); // Đóng Drawer
             Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const InventoryManagementScreen()),
+              MaterialPageRoute(
+                builder: (_) => const InventoryManagementScreen(),
+              ),
             );
           },
         ),
@@ -212,7 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
           onTap: () {
             Navigator.of(context).pop();
             Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) =>  EmployeeManagementScreen()),
+              MaterialPageRoute(builder: (_) => EmployeeManagementScreen()),
             );
           },
         ),
@@ -234,9 +238,9 @@ class _HomeScreenState extends State<HomeScreen> {
   // Tách Profile Section trong Drawer
   Widget _buildProfileSection() {
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const ProfileViewScreen()),
-      ),
+      onTap: () => Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const ProfileViewScreen())),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
         child: Column(
@@ -299,81 +303,116 @@ class _HomeScreenState extends State<HomeScreen> {
     final img = _imageFor(p.id);
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: img.isNotEmpty
-                    ? Image.asset(
-                  img,
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  errorBuilder: (c, e, s) => Container(
-                    color: Colors.grey.shade100,
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.image, size: 36, color: Colors.black26),
-                  ),
-                )
-                    : Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Center(
-                    child: Icon(Icons.image, size: 36, color: Colors.black26),
-                  ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          // Thêm vào giỏ khi chạm vào toàn bộ thẻ sản phẩm
+          if (p.stockQuantity <= 0) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Sản phẩm "${p.name}" đã hết hàng')),
+            );
+            return;
+          }
+          _addToCart(p);
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: img.isNotEmpty
+                      ? Image.asset(
+                          img,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          errorBuilder: (c, e, s) => Container(
+                            color: Colors.grey.shade100,
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              Icons.image,
+                              size: 36,
+                              color: Colors.black26,
+                            ),
+                          ),
+                        )
+                      : Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.image,
+                              size: 36,
+                              color: Colors.black26,
+                            ),
+                          ),
+                        ),
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              p.name, // Ví dụ: Chuối tây
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-            ),
-            const SizedBox(height: 4),
-            // Dòng Khối lượng/Giá (Dòng nhỏ)
-            Text(
-              // Format theo mẫu: '500g, giá'
-            '${p.stockQuantity}, Giá',
-              style: const TextStyle(color: Colors.black54, fontSize: 13),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Giá tiền (Font lớn, đậm)
-                Text(
-                  // Hiển thị giá và thêm ký hiệu '$'
-                  '${p.price.toString()}\$',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
+              const SizedBox(height: 8),
+              Text(
+                p.name, // Ví dụ: Chuối tây
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
                 ),
-                // Nút Thêm (+)
-                GestureDetector(
-                  onTap: () async {
-                    _addToCart(p);
-                  },
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade400,
-                      borderRadius: BorderRadius.circular(8),
+              ),
+              const SizedBox(height: 4),
+              // Dòng Khối lượng/Giá (Dòng nhỏ)
+              Text(
+                // Format theo mẫu: '500g, giá'
+                '${p.stockQuantity}, Giá',
+                style: const TextStyle(color: Colors.black54, fontSize: 13),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Giá tiền (Font lớn, đậm)
+                  Text(
+                    // Hiển thị giá và thêm ký hiệu '$'
+                    '${p.price.toString()}\$',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
-                    child: const Icon(Icons.add, color: Colors.white),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  // Nút Thêm (+) - disabled nếu hết hàng
+                  GestureDetector(
+                    onTap: () async {
+                      // Nếu hết hàng, thông báo và không thêm
+                      if (p.stockQuantity <= 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Sản phẩm "${p.name}" đã hết hàng'),
+                          ),
+                        );
+                        return;
+                      }
+                      _addToCart(p);
+                    },
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: p.stockQuantity <= 0
+                            ? Colors.grey.shade400
+                            : Colors.orange.shade400,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.add, color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -381,6 +420,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Tách Logic Thêm vào giỏ hàng
   void _addToCart(Product p) {
+    // Kiểm tra tồn kho dựa vào số lượng hiện có trong giỏ
+    final current = _cart[p.id] ?? 0;
+    if (current + 1 > p.stockQuantity) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Đã hết hàng, không thể thêm ${p.name}.')),
+      );
+      return;
+    }
+
     setState(() {
       _cart.update(p.id, (v) => v + 1, ifAbsent: () => 1);
     });
@@ -392,7 +440,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -445,7 +492,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 builder: (context, Box<Product> box, _) {
                   final allItems = box.values.toList().cast<Product>();
 
-                  final itemsToShow = allItems.take(_loadedProductCount).toList();
+                  final itemsToShow = allItems
+                      .take(_loadedProductCount)
+                      .toList();
                   final hasMore = allItems.length > itemsToShow.length;
 
                   if (itemsToShow.isEmpty) {
@@ -454,12 +503,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   return GridView.builder(
                     controller: _scrollController,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 3 / 4,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 3 / 4,
+                        ),
                     itemCount: itemsToShow.length + (hasMore ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index == itemsToShow.length && hasMore) {
@@ -538,21 +588,28 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 12),
                     const Text(
                       'Giỏ hàng',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Expanded(
                       child: items.isEmpty
                           ? const Center(child: Text('Giỏ hàng trống'))
                           : ListView.builder(
-                        controller: controller,
-                        itemCount: items.length,
-                        itemBuilder: (context, i) {
-                          final p = items[i];
-                          final qty = _cart[p.id] ?? 0;
-                          return _buildCartItemTile(p, qty, modalSetState); // Tách Cart Item
-                        },
-                      ),
+                              controller: controller,
+                              itemCount: items.length,
+                              itemBuilder: (context, i) {
+                                final p = items[i];
+                                final qty = _cart[p.id] ?? 0;
+                                return _buildCartItemTile(
+                                  p,
+                                  qty,
+                                  modalSetState,
+                                ); // Tách Cart Item
+                              },
+                            ),
                     ),
                     const SizedBox(height: 8),
                     _buildCheckoutButton(items.isEmpty), // Tách Checkout Button
@@ -598,10 +655,21 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
           Text(qty.toString()),
-          // Increment
+          // Increment - chỉ khi còn trong kho
           IconButton(
             icon: const Icon(Icons.add_circle_outline),
             onPressed: () {
+              // Nếu đã đạt giới hạn tồn kho, không cho tăng
+              if ((qty + 1) > p.stockQuantity) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Không thể tăng số lượng. Chỉ còn ${p.stockQuantity} của ${p.name} trong kho.',
+                    ),
+                  ),
+                );
+                return;
+              }
               modalSetState(() {
                 _cart.update(p.id, (v) => v + 1, ifAbsent: () => 1);
               });
@@ -634,28 +702,35 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Expanded(
           child: ElevatedButton(
-            onPressed: cartIsEmpty ? null : () {
-              Navigator.of(context).pop();
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => CheckoutScreen(
-                    cart: Map.from(_cart),
-                    onCheckoutComplete: () async {
-                      setState(() => _cart.clear());
-                      await _persistCart();
-                    },
-                  ),
-                ),
-              );
-            },
+            onPressed: cartIsEmpty
+                ? null
+                : () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => CheckoutScreen(
+                          cart: Map.from(_cart),
+                          onCheckoutComplete: () async {
+                            setState(() => _cart.clear());
+                            await _persistCart();
+                          },
+                        ),
+                      ),
+                    );
+                  },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.orange.shade400,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               elevation: 2,
             ),
-            child: const Text('Thanh toán', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Thanh toán',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
           ),
         ),
       ],
@@ -663,12 +738,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Tách Dialog Xác nhận xoá
-  Future<bool?> _showDeleteConfirmation(BuildContext context, String productName) {
+  Future<bool?> _showDeleteConfirmation(
+    BuildContext context,
+    String productName,
+  ) {
     return showDialog<bool>(
       context: context,
       builder: (dctx) => AlertDialog(
         title: const Text('Xác nhận xoá'),
-        content: Text('Bạn có chắc muốn xoá "$productName" khỏi giỏ hàng không?'),
+        content: Text(
+          'Bạn có chắc muốn xoá "$productName" khỏi giỏ hàng không?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dctx).pop(false),
