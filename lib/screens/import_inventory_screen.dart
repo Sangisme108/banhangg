@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import '../models/inventory_item.dart';
+import '../models/product.dart';
 import '../models/inventory_history.dart'; // <<< THÊM IMPORT MODEL LỊCH SỬ
 import '../services/db_service.dart'; // <<< Đảm bảo bạn có DBService và hàm inventoryHistory()
 
@@ -40,7 +40,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
   }
 
   // --- HÀM GHI LỊCH SỬ CHO SẢN PHẨM ĐÃ CÓ ---
-  Future<void> _addToExisting(InventoryItem item) async {
+  Future<void> _addToExisting(Product item) async {
     final qtyController = TextEditingController(text: '1');
     final formKey = GlobalKey<FormState>();
     final result = await showDialog<int?>(
@@ -84,7 +84,8 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
     if (result != null) {
       setState(() => _processing = true);
       try {
-        final box = DBService.inventoryProducts();
+        // SỬA THÀNH:
+        final box = DBService.products();
         final existing = box.get(item.id);
 
         if (existing == null) {
@@ -139,7 +140,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
     setState(() => _processing = true);
     try {
       final id = _idController.text.trim();
-      final box = DBService.inventoryProducts();
+      final box = DBService.products();
 
       // Kiểm tra trùng ID
       if (box.containsKey(id)) {
@@ -157,7 +158,7 @@ class _ImportInventoryScreenState extends State<ImportInventoryScreen> {
       final unit = _unitController.text.trim();
       final qty = int.parse(_qtyController.text.trim());
 
-      final item = InventoryItem(
+      final item = Product(
         id: id,
         name: name,
         price: price,
