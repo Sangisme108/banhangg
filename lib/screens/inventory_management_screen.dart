@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:sieuthimini/screens/import_inventory_screen.dart';
 import '../models/product.dart';
+import '../models/inventory_item.dart';
 import '../services/db_service.dart';
 import 'add_product_screen.dart';
+import 'edit_product_screen.dart';
 import 'inventory_check_screen.dart';
 import 'low_stock_screen.dart';
 import 'inventory_history_screen.dart';
@@ -47,14 +49,14 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
 
   // --- HÀM TÍNH TOÁN VÀ ĐIỀU HƯỚNG ---
 
-  Map<String, dynamic> _calculateInventoryStats(Box<Product> box) {
+  Map<String, dynamic> _calculateInventoryStats(Box<InventoryItem> box) {
     double totalValue = 0;
     int lowStockCount = 0;
 
-    for (var product in box.values) {
-      totalValue += product.stockQuantity * product.price;
+    for (var item in box.values) {
+      totalValue += item.stockQuantity * item.price;
 
-      if (product.stockQuantity <= _MIN_STOCK) {
+      if (item.stockQuantity <= _MIN_STOCK) {
         lowStockCount++;
       }
     }
@@ -115,14 +117,14 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
     );
   }
 
-  Widget _buildInventoryTile(BuildContext context, Product product) {
+  Widget _buildInventoryTile(BuildContext context, InventoryItem item) {
     String status;
     Color statusColor;
 
-    if (product.stockQuantity == 0) {
+    if (item.stockQuantity == 0) {
       status = 'Hết hàng';
       statusColor = Colors.red;
-    } else if (product.stockQuantity <= _MIN_STOCK) {
+    } else if (item.stockQuantity <= _MIN_STOCK) {
       status = 'Sắp hết';
       statusColor = Colors.orange;
     } else {
@@ -139,11 +141,41 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
       ),
       child: ListTile(
         onTap: () async {
-          await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => AddProductScreen(product: product),
-            ),
-          );
+          // If there's already a Product that has the same logical id as this inventory item,
+          // open the edit screen. We search the products box values by the Product.id field
+          // rather than using prodBox.get(item.id) because Hive keys may differ from the
+          // Product.id field in some records.
+          final prodBox = DBService.products();
+
+          Product? existing;
+          for (var p in prodBox.values.cast<Product>()) {
+            if (p.id == item.id) {
+              existing = p;
+              break;
+            }
+          }
+
+          if (existing != null) {
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => EditProductScreen(product: existing!),
+              ),
+            );
+          } else {
+            // Otherwise open AddProductScreen with prefilled values (create new product from inventory)
+            final prod = Product(
+              id: item.id,
+              name: item.name,
+              price: item.price,
+              unit: item.unit,
+              stockQuantity: item.stockQuantity,
+            );
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => AddProductScreen(product: prod),
+              ),
+            );
+          }
         },
 
         leading: Container(
@@ -158,16 +190,14 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
         ),
 
         title: Text(
-          product.name,
+          item.name,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Mã: ${product.id}'),
-            Text(
-              'Giá: ${product.price.toStringAsFixed(0)} đ / ${product.unit}',
-            ),
+            Text('Mã: ${item.id}'),
+            Text('Giá: ${item.price.toStringAsFixed(0)} đ / ${item.unit}'),
           ],
         ),
         trailing: Column(
@@ -175,7 +205,7 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              'Tồn: ${product.stockQuantity} ${product.unit}',
+              'Tồn: ${item.stockQuantity} ${item.unit}',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
@@ -244,7 +274,11 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
                   // Nút xóa (clear) tìm kiếm
                   if (_searchQuery.isNotEmpty)
                     IconButton(
-                      icon: const Icon(Icons.clear, color: Colors.black45, size: 20),
+                      icon: const Icon(
+                        Icons.clear,
+                        color: Colors.black45,
+                        size: 20,
+                      ),
                       onPressed: () => _searchController.clear(),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -254,18 +288,18 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
             ),
           ),
 
-          // --- PHẦN THỐNG KÊ ---
-          ValueListenableBuilder<Box<Product>>(
-            valueListenable: DBService.products().listenable(),
+          // --- PHẦN THỐNG KÊ (dùng dữ liệu từ inventory) ---
+          ValueListenableBuilder<Box<InventoryItem>>(
+            valueListenable: DBService.inventoryProducts().listenable(),
             builder: (context, box, _) {
               final stats = _calculateInventoryStats(box);
 
               final String totalValueStr = (stats['totalValue'] as double)
                   .toStringAsFixed(0)
                   .replaceAllMapped(
-                RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
                     (Match m) => '${m[1]}.',
-              );
+                  );
 
               final int lowStockCount = stats['lowStockCount'] as int;
 
@@ -295,7 +329,7 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
                               const SizedBox(height: 4),
                               Row(
                                 mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     '${totalValueStr} đ',
@@ -337,7 +371,7 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
                                 const SizedBox(height: 4),
                                 Row(
                                   mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       '${lowStockCount} SP',
@@ -409,22 +443,30 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
             ),
           ),
 
-          // PHẦN CUỘN: Danh sách sản phẩm (ĐÃ ÁP DỤNG BỘ LỌC TÌM KIẾM)
+          // PHẦN CUỘN: Danh sách tồn kho (hiện lấy từ inventory)
           Expanded(
-            child: ValueListenableBuilder<Box<Product>>(
-              valueListenable: DBService.products().listenable(),
+            child: ValueListenableBuilder<Box<InventoryItem>>(
+              valueListenable: DBService.inventoryProducts().listenable(),
               builder: (context, box, _) {
-                // 1. Lấy tất cả sản phẩm
-                final List<Product> allProducts = box.values.toList();
+                // 1. Lấy tất cả items trong kho
+                final List<InventoryItem> allItems = box.values.toList();
 
-                // 2. Áp dụng tìm kiếm
-                final List<Product> filteredProducts =
-                DBService.searchProducts(_searchQuery, allProducts);
+                // 2. Áp dụng tìm kiếm (theo tên hoặc mã)
+                final queryLower = _searchQuery.trim().toLowerCase();
+                final List<InventoryItem> filteredItems = queryLower.isEmpty
+                    ? allItems
+                    : allItems
+                          .where(
+                            (it) =>
+                                it.name.toLowerCase().contains(queryLower) ||
+                                it.id.toLowerCase().contains(queryLower),
+                          )
+                          .toList();
 
                 // 3. Hiển thị danh sách đã lọc
-                final List<Product> productsToDisplay = filteredProducts;
+                final List<InventoryItem> inventoryToDisplay = filteredItems;
 
-                if (productsToDisplay.isEmpty) {
+                if (inventoryToDisplay.isEmpty) {
                   return Center(
                     child: Text(
                       _searchQuery.isEmpty
@@ -441,9 +483,12 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
                     right: 16.0,
                     bottom: 16.0,
                   ),
-                  itemCount: productsToDisplay.length,
+                  itemCount: inventoryToDisplay.length,
                   itemBuilder: (context, index) {
-                    return _buildInventoryTile(context, productsToDisplay[index]);
+                    return _buildInventoryTile(
+                      context,
+                      inventoryToDisplay[index],
+                    );
                   },
                 );
               },

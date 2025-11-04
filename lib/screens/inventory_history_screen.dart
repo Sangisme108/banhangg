@@ -77,8 +77,8 @@ class InventoryHistoryScreen extends StatelessWidget {
                   style: TextStyle(fontWeight: FontWeight.bold, color: color),
                 ),
                 subtitle: Text(
-                  'SL: ${item.quantity} - Giá nhập (ước tính): ${_formatCurrency(item.unitPrice)}\n'
-                      'Mã: ${item.productId} | Thời gian: ${_formatDate(item.timestamp)}',
+                  'SL: ${item.quantity} - Giá nhập (đơn vị): ${_formatCurrency(item.unitPrice)} • Tổng ước tính: ${_formatCurrency((item.unitPrice ?? 0) * item.quantity)}\n'
+                  'Mã: ${item.productId} | Thời gian: ${_formatDate(item.timestamp)}',
                 ),
                 isThreeLine: true,
               );

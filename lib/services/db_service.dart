@@ -133,7 +133,7 @@ class DBService {
           name: 'Chuối tây',
           price: 30000.0,
           unit: 'nải',
-          stockQuantity: 10,
+          stockQuantity: 100,
         ),
         InventoryItem(
           id: 'apple',
