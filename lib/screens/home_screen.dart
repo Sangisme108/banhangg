@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:io';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../services/db_service.dart';
 import '../models/product.dart';
@@ -165,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) =>
-              const SecurityInfoScreen(), // SỬ DỤNG CLASS ĐÃ IMPORT
+                  const SecurityInfoScreen(), // SỬ DỤNG CLASS ĐÃ IMPORT
             ),
           );
         },
@@ -173,7 +174,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // Mục "Đơn hàng" hiện có (CHÚ Ý: Không cần dấu phẩy ở đây nếu không có mục tiếp theo)
       ListTile(
         leading: const Icon(Icons.shopping_bag_outlined),
-        title: const Text('Lịch sử giao dịch'),
+        title: const Text('Lịch sử đơn hàng'),
         onTap: () {
           // Đóng Drawer trước khi điều hướng
           Navigator.of(context).pop();
@@ -302,12 +303,12 @@ class _HomeScreenState extends State<HomeScreen> {
           // Nút xoá (chỉ hiện khi có chữ)
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
-            icon: const Icon(Icons.clear, color: Colors.black45),
-            onPressed: () {
-              _searchController
-                  .clear(); // Xoá chữ và gọi _onSearchChanged
-            },
-          )
+                  icon: const Icon(Icons.clear, color: Colors.black45),
+                  onPressed: () {
+                    _searchController
+                        .clear(); // Xoá chữ và gọi _onSearchChanged
+                  },
+                )
               : null,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
@@ -346,33 +347,60 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: img.isNotEmpty
-                      ? Image.asset(
-                    img,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    errorBuilder: (c, e, s) => Container(
-                      color: Colors.grey.shade100,
-                      alignment: Alignment.center,
-                      child: const Icon(
-                        Icons.image,
-                        size: 36,
-                        color: Colors.black26,
-                      ),
-                    ),
-                  )
-                      : Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.image,
-                        size: 36,
-                        color: Colors.black26,
-                      ),
-                    ),
+                  child: Builder(
+                    builder: (context) {
+                      // Nếu có ảnh người dùng thêm, hiển thị ảnh từ file
+                      final userImagePath = DBService.productImages().get(p.id);
+                      if (userImagePath != null && userImagePath.isNotEmpty) {
+                        final file = File(userImagePath);
+                        if (file.existsSync()) {
+                          return Image.file(
+                            file,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            errorBuilder: (c, e, s) => Container(
+                              color: Colors.grey.shade100,
+                              alignment: Alignment.center,
+                              child: const Icon(
+                                Icons.broken_image,
+                                size: 36,
+                                color: Colors.black26,
+                              ),
+                            ),
+                          );
+                        }
+                      }
+
+                      // Nếu không có ảnh người dùng, dùng ảnh mặc định theo id
+                      return img.isNotEmpty
+                          ? Image.asset(
+                              img,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              errorBuilder: (c, e, s) => Container(
+                                color: Colors.grey.shade100,
+                                alignment: Alignment.center,
+                                child: const Icon(
+                                  Icons.image,
+                                  size: 36,
+                                  color: Colors.black26,
+                                ),
+                              ),
+                            )
+                          : Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.image,
+                                  size: 36,
+                                  color: Colors.black26,
+                                ),
+                              ),
+                            );
+                    },
                   ),
                 ),
               ),
@@ -550,12 +578,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   return GridView.builder(
                     controller: _scrollController,
                     gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 3 / 4,
-                    ),
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 3 / 4,
+                        ),
                     itemCount: itemsToShow.length + (hasMore ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index == itemsToShow.length && hasMore) {
@@ -644,18 +672,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: items.isEmpty
                           ? const Center(child: Text('Giỏ hàng trống'))
                           : ListView.builder(
-                        controller: controller,
-                        itemCount: items.length,
-                        itemBuilder: (context, i) {
-                          final p = items[i];
-                          final qty = _cart[p.id] ?? 0;
-                          return _buildCartItemTile(
-                            p,
-                            qty,
-                            modalSetState,
-                          ); // Tách Cart Item
-                        },
-                      ),
+                              controller: controller,
+                              itemCount: items.length,
+                              itemBuilder: (context, i) {
+                                final p = items[i];
+                                final qty = _cart[p.id] ?? 0;
+                                return _buildCartItemTile(
+                                  p,
+                                  qty,
+                                  modalSetState,
+                                ); // Tách Cart Item
+                              },
+                            ),
                     ),
                     const SizedBox(height: 8),
                     _buildCheckoutButton(items.isEmpty), // Tách Checkout Button
@@ -751,19 +779,19 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: cartIsEmpty
                 ? null
                 : () {
-              Navigator.of(context).pop();
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => CheckoutScreen(
-                    cart: Map.from(_cart),
-                    onCheckoutComplete: () async {
-                      setState(() => _cart.clear());
-                      await _persistCart();
-                    },
-                  ),
-                ),
-              );
-            },
+                    Navigator.of(context).pop();
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => CheckoutScreen(
+                          cart: Map.from(_cart),
+                          onCheckoutComplete: () async {
+                            setState(() => _cart.clear());
+                            await _persistCart();
+                          },
+                        ),
+                      ),
+                    );
+                  },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.orange.shade400,
               foregroundColor: Colors.white,
@@ -785,9 +813,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Tách Dialog Xác nhận xoá
   Future<bool?> _showDeleteConfirmation(
-      BuildContext context,
-      String productName,
-      ) {
+    BuildContext context,
+    String productName,
+  ) {
     return showDialog<bool>(
       context: context,
       builder: (dctx) => AlertDialog(

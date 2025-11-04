@@ -1,4 +1,4 @@
-// lib/screens/inventory_check_screen.dart (ĐÃ CẬP NHẬT LOGIC TÌM KIẾM)
+// lib/screens/inventory_check_screen.dart (ĐÃ SỬA LỖI TÌM KIẾM GỢI Ý)
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/product.dart';
@@ -21,9 +21,13 @@ class _InventoryCheckScreenState extends State<InventoryCheckScreen> {
   int _systemStock = 0;
   int _difference = 0;
 
+  // Biến mới để lưu trữ kết quả tìm kiếm (danh sách gợi ý)
+  List<Product> _searchResults = [];
+
   @override
   void initState() {
     super.initState();
+    // Thay đổi: Listener gọi hàm tìm kiếm để đổ dữ liệu vào _searchResults
     _productSearchController.addListener(_searchProduct);
     _actualQuantityController.addListener(_calculateDifference);
   }
@@ -38,12 +42,13 @@ class _InventoryCheckScreenState extends State<InventoryCheckScreen> {
     super.dispose();
   }
 
-  // HÀM TÌM KIẾM VÀ HIỂN THỊ TỒN KHO HỆ THỐNG
+  // HÀM TÌM KIẾM VÀ HIỂN THỊ DANH SÁCH GỢI Ý
   void _searchProduct() {
     final query = _productSearchController.text.trim();
     if (query.isEmpty) {
       setState(() {
-        _selectedProduct = null;
+        _searchResults = []; // Xóa danh sách gợi ý
+        _selectedProduct = null; // Bỏ chọn sản phẩm
         _systemStock = 0;
         _actualQuantityController.clear();
         _difference = 0;
@@ -51,22 +56,33 @@ class _InventoryCheckScreenState extends State<InventoryCheckScreen> {
       return;
     }
 
-    final box = DBService.products();
-    final product = box.values.firstWhere(
-          (p) => p.id.toLowerCase() == query.toLowerCase() || p.name.toLowerCase().contains(query.toLowerCase()),
-      orElse: () => null as Product,
-    );
+    // Chỉ tìm kiếm nếu chưa có sản phẩm nào được chọn (để tránh làm mất dữ liệu)
+    if (_selectedProduct == null || _selectedProduct!.name.toLowerCase() != query.toLowerCase()) {
+      final allProducts = DBService.products().values.toList();
+      final results = DBService.searchProducts(query, allProducts);
 
+      setState(() {
+        _searchResults = results;
+      });
+    }
+  }
+
+  // HÀM CHỌN SẢN PHẨM TỪ DANH SÁCH GỢI Ý
+  void _selectProduct(Product product) {
     setState(() {
       _selectedProduct = product;
-      if (product != null) {
-        _systemStock = product.stockQuantity;
-        // Tự động tính chênh lệch nếu đã có số lượng thực tế
-        _calculateDifference();
-      } else {
-        _systemStock = 0;
-        _difference = 0;
-      }
+      _systemStock = product.stockQuantity;
+      _searchResults = []; // Xóa danh sách gợi ý sau khi chọn
+
+      // Điền tên sản phẩm chính xác vào ô tìm kiếm
+      _productSearchController.text = product.name;
+
+      // Đặt con trỏ ở cuối để người dùng có thể thấy tên đầy đủ
+      _productSearchController.selection = TextSelection.collapsed(offset: product.name.length);
+
+      // Reset số lượng thực tế và chênh lệch
+      _actualQuantityController.clear();
+      _difference = 0;
     });
   }
 
@@ -143,30 +159,60 @@ class _InventoryCheckScreenState extends State<InventoryCheckScreen> {
               // Trường Tìm kiếm sản phẩm
               const Text('Tìm kiếm sản phẩm', style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
-              TextFormField(
-                controller: _productSearchController,
-                decoration: InputDecoration(
-                  hintText: 'Nhập tên hoặc mã sản phẩm...',
-                  fillColor: Colors.grey.shade100,
-                  filled: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide.none,
+              // Đổi từ TextFormField sang Column để chứa danh sách gợi ý
+              Column(
+                children: [
+                  TextFormField(
+                    controller: _productSearchController,
+                    decoration: InputDecoration(
+                      hintText: 'Nhập tên hoặc mã sản phẩm...',
+                      fillColor: Colors.grey.shade100,
+                      filled: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      suffixIcon: _selectedProduct != null ? const Icon(Icons.check_circle, color: Colors.green) : null,
+                    ),
                   ),
-                  suffixIcon: _selectedProduct != null ? Icon(Icons.check_circle, color: Colors.green) : null,
-                ),
-              ),
+
+                  // Hiển thị danh sách gợi ý
+                  if (_searchResults.isNotEmpty)
+                    Container(
+                      constraints: const BoxConstraints(maxHeight: 200), // Giới hạn chiều cao
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      margin: const EdgeInsets.only(top: 4),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: _searchResults.length,
+                        itemBuilder: (context, index) {
+                          final product = _searchResults[index];
+                          return ListTile(
+                            title: Text(product.name),
+                            subtitle: Text('Mã: ${product.id}'),
+                            onTap: () => _selectProduct(product), // Khi người dùng CHỌN
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ), // Kết thúc phần tìm kiếm
 
               if (_selectedProduct != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 10.0),
-                  child: Text('Đơn vị: ${_selectedProduct!.unit}', style: TextStyle(fontWeight: FontWeight.w500)),
-                )
-              else if (_productSearchController.text.isNotEmpty)
-                const Padding(
-                  padding: EdgeInsets.only(top: 8.0),
-                  child: Text('Không tìm thấy sản phẩm.', style: TextStyle(color: Colors.red)),
+                  child: Text('Đơn vị: ${_selectedProduct!.unit}', style: const TextStyle(fontWeight: FontWeight.w500)),
                 ),
+              // Bỏ phần thông báo "Không tìm thấy sản phẩm" để tránh gây rối khi đang gõ
+              // else if (_productSearchController.text.isNotEmpty && _searchResults.isEmpty)
+              //   const Padding(
+              //     padding: EdgeInsets.only(top: 8.0),
+              //     child: Text('Không tìm thấy sản phẩm.', style: TextStyle(color: Colors.red)),
+              //   ),
 
               const SizedBox(height: 20),
 

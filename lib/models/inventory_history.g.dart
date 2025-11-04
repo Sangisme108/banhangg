@@ -1,47 +1,47 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'product.dart';
+part of 'inventory_history.dart';
 
 // **************************************************************************
 // TypeAdapterGenerator
 // **************************************************************************
 
-class ProductAdapter extends TypeAdapter<Product> {
+class InventoryHistoryAdapter extends TypeAdapter<InventoryHistory> {
   @override
-  final int typeId = 0;
+  final int typeId = 11;
 
   @override
-  Product read(BinaryReader reader) {
+  InventoryHistory read(BinaryReader reader) {
     final numOfFields = reader.readByte();
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    return Product(
-      id: fields[0] as String,
-      name: fields[1] as String,
-      price: fields[2] as double,
-      unit: fields[3] as String,
-      stockQuantity: fields[4] as int,
-      createdAt: fields[5] as DateTime?,
+    return InventoryHistory(
+      productId: fields[0] as String,
+      productName: fields[1] as String,
+      quantity: fields[2] as int,
+      timestamp: fields[3] as DateTime,
+      transactionType: fields[4] as String,
+      unitPrice: fields[5] as double?,
     );
   }
 
   @override
-  void write(BinaryWriter writer, Product obj) {
+  void write(BinaryWriter writer, InventoryHistory obj) {
     writer
       ..writeByte(6)
       ..writeByte(0)
-      ..write(obj.id)
+      ..write(obj.productId)
       ..writeByte(1)
-      ..write(obj.name)
+      ..write(obj.productName)
       ..writeByte(2)
-      ..write(obj.price)
+      ..write(obj.quantity)
       ..writeByte(3)
-      ..write(obj.unit)
+      ..write(obj.timestamp)
       ..writeByte(4)
-      ..write(obj.stockQuantity)
+      ..write(obj.transactionType)
       ..writeByte(5)
-      ..write(obj.createdAt);
+      ..write(obj.unitPrice);
   }
 
   @override
@@ -50,7 +50,7 @@ class ProductAdapter extends TypeAdapter<Product> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is ProductAdapter &&
+      other is InventoryHistoryAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

@@ -1,8 +1,10 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/product.dart';
+import '../models/inventory_item.dart';
 import '../models/user.dart';
 import '../models/order.dart';
 import '../models/order_line.dart';
+import '../models/inventory_history.dart'; // <<< THÊM IMPORT
 
 class DBService {
   static const String productsBox = 'products';
@@ -10,19 +12,27 @@ class DBService {
   static const String ordersBox = 'orders';
   static const String settingsBox = 'settings';
   static const String cartsBox = 'carts';
+  static const String productImagesBox = 'product_images';
+  static const String inventoryProductsBox = 'inventory_products';
+  static const String inventoryHistoryBox = 'inventory_history_box'; // <<< THÊM HẰNG SỐ BOX
 
   static Future<void> init() async {
     // 1. Initialize Hive & Register Adapters
     await Hive.initFlutter();
     Hive.registerAdapter(ProductAdapter());
+    Hive.registerAdapter(InventoryItemAdapter());
     Hive.registerAdapter(UserAdapter());
     Hive.registerAdapter(OrderAdapter());
     Hive.registerAdapter(OrderLineAdapter());
+    Hive.registerAdapter(InventoryHistoryAdapter()); // <<< ĐĂNG KÝ ADAPTER MỚI
 
     // 2. Open Boxes
     await Hive.openBox<Product>(productsBox);
     await Hive.openBox<User>(usersBox);
     await Hive.openBox<Order>(ordersBox);
+    await Hive.openBox<InventoryItem>(inventoryProductsBox);
+    await Hive.openBox<InventoryHistory>(inventoryHistoryBox); // <<< MỞ BOX MỚI
+    await Hive.openBox<String>(productImagesBox);
     await Hive.openBox(cartsBox);
     await Hive.openBox(settingsBox);
 
@@ -31,15 +41,22 @@ class DBService {
 
     // 4. Seed Data
     await seedProducts();
+    await seedInventory();
     await seedUsers();
   }
 
   // CÁC HÀM GETTER
   static Box<Product> products() => Hive.box<Product>(productsBox);
+  static Box<InventoryItem> inventoryProducts() =>
+      Hive.box<InventoryItem>(inventoryProductsBox);
+  static Box<InventoryHistory> inventoryHistory() =>
+      Hive.box<InventoryHistory>(inventoryHistoryBox); // <<< ĐỊNH NGHĨA GETTER MỚI
   static Box<User> users() => Hive.box<User>(usersBox);
   static Box<Order> orders() => Hive.box<Order>(ordersBox);
   static Box carts() => Hive.box(cartsBox);
   static Box settings() => Hive.box(settingsBox);
+  static Box<String> productImages() => Hive.box<String>(productImagesBox);
+
 
   // --- LOGIC SEEDING ---
 
@@ -107,6 +124,61 @@ class DBService {
     }
   }
 
+  static Future<void> seedInventory() async {
+    final box = inventoryProducts();
+    if (box.isEmpty) {
+      final List<InventoryItem> sample = [
+        InventoryItem(
+          id: 'banana',
+          name: 'Chuối tây',
+          price: 30000.0,
+          unit: 'nải',
+          stockQuantity: 10,
+        ),
+        InventoryItem(
+          id: 'apple',
+          name: 'Táo đỏ',
+          price: 20000.0,
+          unit: 'kg',
+          stockQuantity: 100,
+        ),
+        InventoryItem(
+          id: 'coke',
+          name: 'Nước Coke',
+          price: 10000.0,
+          unit: 'lon',
+          stockQuantity: 100,
+        ),
+        InventoryItem(
+          id: 'diet_coke',
+          name: 'Diet Coke',
+          price: 12000.0,
+          unit: 'lon',
+          stockQuantity: 100,
+        ),
+        InventoryItem(
+          id: 'tomato',
+          name: 'Cà chua',
+          price: 15000.0,
+          unit: 'kg',
+          stockQuantity: 100,
+        ),
+        InventoryItem(
+          id: 'brocoli',
+          name: 'Bông cải',
+          price: 25000.0,
+          unit: 'cây',
+          stockQuantity: 100,
+        ),
+      ];
+
+      for (final it in sample) {
+        await box.put(it.id, it);
+      }
+
+      print('--- ĐÃ TẠO ${sample.length} MẶT HÀNG KHO MẪU ---');
+    }
+  }
 
   // ✅ FIXED: tránh trùng instance HiveObject khi đổi key
   static Future<void> _migrateProductsToIdKeys() async {
@@ -152,45 +224,6 @@ class DBService {
       }
     }
   }
-
-  // ✅ HÀM BỔ SUNG: TÍNH VÀ LẤY SẢN PHẨM BÁN CHẠY NHẤT (TOP 3)
-  static List<Map<String, dynamic>> getTopSellingProducts() {
-    final Map<String, int> productSales = {};
-
-    // 1. Lặp qua tất cả các đơn hàng để tính tổng số lượng bán được
-    for (final order in orders().values) {
-      // Sử dụng order.items (đã được xác nhận là đúng với cấu trúc hiện tại)
-      for (final line in order.items) {
-        final productId = line.productId;
-        // Ép kiểu quantity về int để tránh lỗi kiểu dữ liệu
-        final int quantity = line.quantity.toInt();
-
-        // Cộng dồn số lượng bán được
-        productSales[productId] = (productSales[productId] ?? 0) + quantity;
-      }
-    }
-
-    // 2. Chuyển đổi Map thành List để dễ sắp xếp
-    final List<Map<String, dynamic>> topProducts = [];
-    productSales.forEach((productId, soldQuantity) {
-      final product = products().get(productId);
-      if (product != null) {
-        topProducts.add({
-          'id': productId,
-          'name': product.name,
-          'unit': product.unit,
-          'soldQuantity': soldQuantity, // Số lượng đã bán
-        });
-      }
-    });
-
-    // 3. Sắp xếp: Sản phẩm bán chạy nhất (số lượng bán lớn nhất) lên đầu
-    topProducts.sort((a, b) => b['soldQuantity'].compareTo(a['soldQuantity']));
-
-    // 4. Trả về tối đa 3 sản phẩm bán chạy nhất
-    return topProducts.take(3).toList();
-  }
-
 
   static List<Product> getAllProducts() {
     return products().values.toList();
@@ -241,5 +274,62 @@ class DBService {
           p.id.toLowerCase().contains(lowerQuery),
     )
         .toList();
+  }
+
+  // --- INVENTORY SYNC HELPERS ---
+  // Ensure there is an InventoryItem for the given product. This will only
+  // create the inventory record if it doesn't already exist. We copy
+  // metadata (id, name, price, unit) and set the initial stock to the
+  // product's stockQuantity at creation time.
+  static Future<void> ensureInventoryForProduct(Product product) async {
+    final box = inventoryProducts();
+    if (!box.containsKey(product.id)) {
+      final inv = InventoryItem(
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        unit: product.unit,
+        stockQuantity: product.stockQuantity,
+      );
+      await box.put(inv.id, inv);
+    }
+  }
+
+  // Update inventory metadata (name/price/unit) for a product if the
+  // inventory record exists. We intentionally do NOT change the
+  // inventory stockQuantity here to keep product and inventory stocks
+  // separate unless the user explicitly requests synchronization.
+  static Future<void> updateInventoryMetadataForProduct(Product product) async {
+    final box = inventoryProducts();
+    if (box.containsKey(product.id)) {
+      final existing = box.get(product.id) as InventoryItem;
+      existing.name = product.name;
+      existing.price = product.price;
+      existing.unit = product.unit;
+      await box.put(existing.id, existing);
+    }
+  }
+
+  // Try to reduce inventory stock by [amount] for item with [id].
+  // Returns:
+  // - remaining stock (>= 0) on success,
+  // - -1 if inventory item not found,
+  // - -2 if not enough stock to reduce.
+  static Future<int> reduceInventoryStockIfAvailable(
+      String id,
+      int amount,
+      ) async {
+    final box = inventoryProducts();
+    final existing = box.get(id);
+    if (existing == null) return -1;
+    if (amount <= 0) return existing.stockQuantity;
+    if (existing.stockQuantity < amount) return -2;
+    existing.stockQuantity -= amount;
+    await box.put(existing.id, existing);
+    return existing.stockQuantity;
+  }
+
+  static bool inventoryHasProduct(String id) {
+    return inventoryProducts().containsKey(id);
   }
 }
