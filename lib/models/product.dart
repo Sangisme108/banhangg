@@ -14,17 +14,21 @@ class Product extends HiveObject {
   @HiveField(2)
   double price;
 
-  @HiveField(3) // Tên mới: Đơn vị tính (unit)
+  @HiveField(3)
   String unit;
 
-  @HiveField(4) // Trường mới: Số lượng tồn kho (stockQuantity)
+  @HiveField(4)
   int stockQuantity;
+
+  @HiveField(5) // <-- THÊM DÒNG NÀY (sử dụng index tiếp theo)
+  DateTime? createdAt; // <-- THÊM TRƯỜNG NÀY (nullable)
 
   Product({
     required this.id,
     required this.name,
     required this.price,
     required this.unit,
-    this.stockQuantity = 0, // Đặt mặc định hoặc nhận giá trị từ DBService
+    this.stockQuantity = 0,
+    this.createdAt, // <-- THÊM VÀO CONSTRUCTOR (không 'required')
   });
 }

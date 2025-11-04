@@ -1,4 +1,5 @@
-// lib/screens/add_product_screen.dart (ĐÃ CHỈNH SỬA)
+// lib/screens/add_product_screen.dart (ĐÃ CHỈNH SỬA HOÀN CHỈNH)
+
 import 'package:flutter/material.dart';
 // removed unused dart:io import because image UI was removed
 import 'dart:math' as math;
@@ -145,9 +146,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   Future<void> _addProductFromInventory(
-    InventoryItem item,
-    int takeAmount,
-  ) async {
+      InventoryItem item,
+      int takeAmount,
+      ) async {
     setState(() => _isProcessing = true);
     try {
       final box = DBService.products();
@@ -206,6 +207,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
           price: item.price,
           unit: item.unit,
           stockQuantity: takeAmount,
+          createdAt: DateTime.now(), // <-- ĐÃ THÊM
         );
 
         await box.put(newProduct.id, newProduct);
@@ -261,10 +263,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
         final int delta = stockQuantity - oldQty;
         if (delta > 0) {
           final int reduceResult =
-              await DBService.reduceInventoryStockIfAvailable(
-                widget.product!.id,
-                delta,
-              );
+          await DBService.reduceInventoryStockIfAvailable(
+            widget.product!.id,
+            delta,
+          );
           if (reduceResult == -1) {
             // inventory item not found
             ScaffoldMessenger.of(context).showSnackBar(
@@ -278,8 +280,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
             return;
           } else if (reduceResult == -2) {
             final inv =
-                DBService.inventoryProducts().get(widget.product!.id)
-                    as dynamic;
+            DBService.inventoryProducts().get(widget.product!.id)
+            as dynamic;
             final available = inv?.stockQuantity ?? 0;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -297,6 +299,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
         widget.product!.price = price;
         widget.product!.unit = unit;
         widget.product!.stockQuantity = stockQuantity; // GHI ĐÈ số lượng
+
+        // Chúng ta KHÔNG cập nhật createdAt khi chỉnh sửa
+
         await widget.product!.save();
 
         // image support removed — productImages not modified here
@@ -324,6 +329,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
           price: price,
           unit: unit,
           stockQuantity: stockQuantity, // Tồn kho ban đầu
+          createdAt: DateTime.now(), // <-- ĐÃ THÊM
         );
 
         // Trước khi thêm sản phẩm mới, kiểm tra kho có bản ghi tương ứng không
@@ -344,7 +350,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         // sử dụng số lượng đang nhập trong ô Tồn kho.
         final int takeAmount = _selectedTakeAmount ?? stockQuantity;
         final int reduceResult =
-            await DBService.reduceInventoryStockIfAvailable(id, takeAmount);
+        await DBService.reduceInventoryStockIfAvailable(id, takeAmount);
         if (reduceResult == -1) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -498,9 +504,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                               contentPadding: EdgeInsets.zero,
                               leading: isSelected
                                   ? const Icon(
-                                      Icons.check_circle,
-                                      color: Colors.green,
-                                    )
+                                Icons.check_circle,
+                                color: Colors.green,
+                              )
                                   : null,
                               title: Text(it.name),
                               subtitle: Column(
