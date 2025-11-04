@@ -1,6 +1,7 @@
 // lib/screens/inventory_management_screen.dart (ĐÃ CẬP NHẬT: Kết nối nút Sắp hết hàng)
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:sieuthimini/screens/import_inventory_screen.dart';
 import '../models/product.dart';
 import '../services/db_service.dart';
 import 'add_product_screen.dart';
@@ -47,7 +48,7 @@ class _InventoryManagementScreenState extends State<InventoryManagementScreen> {
   void _onImportInventoryPressed() async {
     await Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (_) => const AddProductScreen()));
+    ).push(MaterialPageRoute(builder: (_) => const ImportInventoryScreen()));
   }
 
   void _onHistoryInventoryPressed() async {
