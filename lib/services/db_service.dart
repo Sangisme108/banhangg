@@ -107,6 +107,7 @@ class DBService {
     }
   }
 
+
   // ✅ FIXED: tránh trùng instance HiveObject khi đổi key
   static Future<void> _migrateProductsToIdKeys() async {
     final box = products();
@@ -151,6 +152,45 @@ class DBService {
       }
     }
   }
+
+  // ✅ HÀM BỔ SUNG: TÍNH VÀ LẤY SẢN PHẨM BÁN CHẠY NHẤT (TOP 3)
+  static List<Map<String, dynamic>> getTopSellingProducts() {
+    final Map<String, int> productSales = {};
+
+    // 1. Lặp qua tất cả các đơn hàng để tính tổng số lượng bán được
+    for (final order in orders().values) {
+      // Sử dụng order.items (đã được xác nhận là đúng với cấu trúc hiện tại)
+      for (final line in order.items) {
+        final productId = line.productId;
+        // Ép kiểu quantity về int để tránh lỗi kiểu dữ liệu
+        final int quantity = line.quantity.toInt();
+
+        // Cộng dồn số lượng bán được
+        productSales[productId] = (productSales[productId] ?? 0) + quantity;
+      }
+    }
+
+    // 2. Chuyển đổi Map thành List để dễ sắp xếp
+    final List<Map<String, dynamic>> topProducts = [];
+    productSales.forEach((productId, soldQuantity) {
+      final product = products().get(productId);
+      if (product != null) {
+        topProducts.add({
+          'id': productId,
+          'name': product.name,
+          'unit': product.unit,
+          'soldQuantity': soldQuantity, // Số lượng đã bán
+        });
+      }
+    });
+
+    // 3. Sắp xếp: Sản phẩm bán chạy nhất (số lượng bán lớn nhất) lên đầu
+    topProducts.sort((a, b) => b['soldQuantity'].compareTo(a['soldQuantity']));
+
+    // 4. Trả về tối đa 3 sản phẩm bán chạy nhất
+    return topProducts.take(3).toList();
+  }
+
 
   static List<Product> getAllProducts() {
     return products().values.toList();

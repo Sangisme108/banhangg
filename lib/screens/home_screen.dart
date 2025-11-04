@@ -173,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // Mục "Đơn hàng" hiện có (CHÚ Ý: Không cần dấu phẩy ở đây nếu không có mục tiếp theo)
       ListTile(
         leading: const Icon(Icons.shopping_bag_outlined),
-        title: const Text('Đơn hàng'),
+        title: const Text('Lịch sử giao dịch'),
         onTap: () {
           // Đóng Drawer trước khi điều hướng
           Navigator.of(context).pop();
